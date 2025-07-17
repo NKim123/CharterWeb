@@ -33,6 +33,8 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: 1.158.0
+      - name: Initialize Supabase
+        run: supabase init
       - name: Login to Supabase
         run: supabase login --token "$SUPABASE_ACCESS_TOKEN" --no-browser
         env:
