@@ -214,6 +214,13 @@ Return JSON ONLY conforming to the Itinerary interface.`
       input: userPrompt,
     })
 
+    // =============== NEW: Extract usage metadata =====================
+    const usage: Record<string, any> | undefined = (completion as any)?.usage
+    const promptTokens = usage?.prompt_tokens ?? usage?.input_tokens ?? 0
+    const completionTokens = usage?.completion_tokens ?? usage?.output_tokens ?? 0
+    const totalTokens = usage?.total_tokens ?? promptTokens + completionTokens
+    // =================================================================
+
     const content = (completion as any).output_text?.trim()
     if (!content) throw new Error('OpenAI returned empty response')
 
@@ -262,6 +269,20 @@ Return JSON ONLY conforming to the Itinerary interface.`
           generated_at: responsePayload.generated_at
         })
         if (error) throw error
+
+        // ================= NEW: Token usage logging ==================
+        try {
+          await supabase.from('token_usage').insert({
+            plan_id: responsePayload.plan_id,
+            model: 'gpt-4o',
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens,
+            total_tokens: totalTokens
+          })
+        } catch (_usageErr) {
+          console.warn('Failed to log token usage', _usageErr)
+        }
+        // =============================================================
       }
     } catch (dbErr) {
       console.error('Failed to persist trip:', dbErr)
@@ -275,6 +296,29 @@ Return JSON ONLY conforming to the Itinerary interface.`
   } catch (err) {
     const message = (err as Error).message ?? err.toString()
     console.error('plan_trip error:', err)
+
+    // ================= NEW: Persist error log ========================
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+      if (supabaseUrl && supabaseAnonKey) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const { createClient } = await import('https://deno.land/x/supabase_js@v2.1.0/mod.ts')
+        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
+        })
+        await supabase.from('error_logs').insert({
+          function_name: 'plan_trip',
+          error_message: message,
+          stack_trace: (err as Error)?.stack ?? null
+        })
+      }
+    } catch (logErr) {
+      console.warn('Failed to persist error log', logErr)
+    }
+    // ================================================================
+
     // Distinguish client errors (bad input) from server errors
     const clientError = message.toLowerCase().includes('location not found')
     return new Response(JSON.stringify({ error: message }), {
