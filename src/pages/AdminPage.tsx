@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Header } from '../components/Header'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -88,62 +89,65 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <>
+      <Header />
+      <div className="max-w-5xl mx-auto pt-24 pb-8">
+        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      {/* Token Usage */}
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">Token Usage (last 1k rows)</h2>
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2 text-left border">Date</th>
-              <th className="p-2 text-left border">Total Tokens</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tokenSpend.map((row) => (
-              <tr key={row.date}>
-                <td className="border p-2">{row.date}</td>
-                <td className="border p-2">{row.tokens.toLocaleString()}</td>
+        {/* Token Usage */}
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-2">Token Usage (last 1k rows)</h2>
+          <table className="w-full border text-sm">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 text-left border">Date</th>
+                <th className="p-2 text-left border">Total Tokens</th>
               </tr>
+            </thead>
+            <tbody>
+              {tokenSpend.map((row) => (
+                <tr key={row.date}>
+                  <td className="border p-2">{row.date}</td>
+                  <td className="border p-2">{row.tokens.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        {/* Error Logs */}
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-2">Recent Error Logs</h2>
+          <ul className="list-disc pl-6 space-y-1 text-sm text-gray-700">
+            {logs.map((l, i) => (
+              <li key={i}>{l}</li>
             ))}
-          </tbody>
-        </table>
-      </section>
+          </ul>
+        </section>
 
-      {/* Error Logs */}
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">Recent Error Logs</h2>
-        <ul className="list-disc pl-6 space-y-1 text-sm text-gray-700">
-          {logs.map((l, i) => (
-            <li key={i}>{l}</li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Users */}
-      <section>
-        <h2 className="text-xl font-semibold mb-2">Users</h2>
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2 border text-left">Email</th>
-              <th className="p-2 border text-left">Role</th>
-              <th className="p-2 border text-left">Joined</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td className="border p-2">{u.email}</td>
-                <td className="border p-2">{u.role ?? 'user'}</td>
-                <td className="border p-2">{u.created_at.slice(0, 10)}</td>
+        {/* Users */}
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Users</h2>
+          <table className="w-full border text-sm">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 border text-left">Email</th>
+                <th className="p-2 border text-left">Role</th>
+                <th className="p-2 border text-left">Joined</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    </div>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td className="border p-2">{u.email}</td>
+                  <td className="border p-2">{u.role ?? 'user'}</td>
+                  <td className="border p-2">{u.created_at.slice(0, 10)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </>
   )
 } 

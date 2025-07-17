@@ -316,6 +316,7 @@ StoredTrip {
   - **Todo**: Tide and moon phase integration
   - **Todo**: Season-specific advice and timing
   - **Todo**: Local guide and charter recommendations
+  - **Todo**: When the user drops a point in the map, provide a brief fishing summary of the area
 
 - [ ] **Social Features**
   - **Todo**: Trip sharing with other users
@@ -347,6 +348,8 @@ StoredTrip {
   - **Todo**: Bundle size optimization
   - **Todo**: Database query optimization
   - **Todo**: Caching strategies for external APIs
+
+
 
 ## 🚀 Getting Started
 
