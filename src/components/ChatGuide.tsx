@@ -106,7 +106,7 @@ export function ChatGuide({ planId }: ChatGuideProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-4 flex flex-col h-[600px]">
+    <div className="mx-auto bg-white rounded-lg shadow p-4 flex flex-col h-[600px] max-w-full lg:max-w-4xl">
       <div className="flex-1 overflow-y-auto space-y-4 pb-4">
         {messages.map((m, idx) => (
           <div

@@ -37,15 +37,19 @@ export default function SharedTrip() {
         <h1 className="text-3xl font-bold mb-4">Trip {trip.plan_id}</h1>
         <p className="text-gray-500 mb-6">Generated {new Date(trip.generated_at).toLocaleString()}</p>
 
-        {trip.itinerary?.waypoints && (
-          <div className="mb-12">
-            <MapView waypoints={trip.itinerary.waypoints} height="400px" />
-          </div>
-        )}
-
+        {/* Map & Itinerary – responsive grid */}
         {trip.itinerary && (
           <>
-            <ItineraryDetails itinerary={trip.itinerary} />
+            <div className="lg:grid lg:grid-cols-2 lg:gap-8 mb-12">
+              <div>
+                {trip.itinerary.waypoints && (
+                  <MapView waypoints={trip.itinerary.waypoints} height="400px" />
+                )}
+              </div>
+              <div className="mt-10 lg:mt-0">
+                <ItineraryDetails itinerary={trip.itinerary} />
+              </div>
+            </div>
 
             {/* Chat Guide */}
             <div className="mt-10">

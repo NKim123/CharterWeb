@@ -81,14 +81,17 @@ function AppContent() {
               </button>
             </div>
 
-            <div className="mt-6">
-              <h2 className="text-2xl font-bold mb-4">Map Preview</h2>
-              <MapView waypoints={plan.itinerary.waypoints} />
-            </div>
+            {/* Map & Itinerary – stack on mobile, side-by-side on large screens */}
+            <div className="mt-6 lg:grid lg:grid-cols-2 lg:gap-8">
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Map Preview</h2>
+                <MapView waypoints={plan.itinerary.waypoints} />
+              </div>
 
-            <div className="mt-10">
-              <h2 className="text-2xl font-bold mb-4">Your Trip Itinerary</h2>
-              <ItineraryDetails itinerary={plan.itinerary} />
+              <div className="mt-10 lg:mt-0">
+                <h2 className="text-2xl font-bold mb-4">Your Trip Itinerary</h2>
+                <ItineraryDetails itinerary={plan.itinerary} />
+              </div>
             </div>
 
             <div className="mt-10">

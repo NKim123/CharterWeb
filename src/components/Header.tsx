@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import logo from '../assets/charterai-logo-notext.png'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -14,8 +15,8 @@ export function Header() {
   return (
     <header className="fixed top-0 inset-x-0 bg-white shadow z-20">
       <div className="max-w-6xl mx-auto flex items-center justify-between h-16 px-4">
-        <NavLink to="/" className="text-2xl font-bold text-brand">
-          CharterAI
+        <NavLink to="/" className="flex items-center" aria-label="Home">
+          <img src={logo} alt="CharterAI" className="h-10 md:h-12 w-auto" />
         </NavLink>
 
         {/* Desktop nav */}

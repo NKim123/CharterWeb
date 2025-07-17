@@ -38,7 +38,7 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
   const watchedSpecies = watch('targetSpecies')
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+    <div className="mx-auto p-6 bg-white rounded-lg shadow-lg max-w-full md:max-w-2xl lg:max-w-3xl">
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-brand mb-2">Plan Your Fishing Trip</h2>
         <p className="text-gray-600">Tell us about your ideal fishing adventure and we'll create a personalized itinerary.</p>
