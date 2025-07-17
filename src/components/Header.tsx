@@ -12,6 +12,12 @@ export function Header() {
         CharterAI
       </Link>
       <div className="flex items-center gap-4">
+        <Link to="/history" className="text-sm text-gray-700 underline">
+          My Trips
+        </Link>
+        <Link to="/profile" className="text-sm text-gray-700 underline">
+          Profile
+        </Link>
         {role === 'admin' && (
           <Link to="/admin" className="text-sm text-gray-700 underline">
             Admin

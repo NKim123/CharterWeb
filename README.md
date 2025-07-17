@@ -188,7 +188,7 @@ StoredTrip {
 #### plan_trip Function
 **Purpose**: Generates personalized fishing trip itineraries based on user input.
 
-**Current Status**: MVP implementation with mock data
+**Current Status**: Fully integrated – calls OpenAI (jsr:@openai/openai), NOAA Weather, USGS Water Services, plus a small RAG knowledge base. Results are persisted to Supabase `trips` table via RLS-aware insert.
 **Location**: `supabase/functions/plan_trip/index.ts`
 
 **Input Schema**:
@@ -216,12 +216,12 @@ StoredTrip {
 }
 ```
 
-**Planned Enhancements**:
-- Integration with NOAA weather API
-- USGS water data integration
-- OpenAI API for intelligent planning
-- RAG (Retrieval Augmented Generation) for fishing knowledge
-- Database persistence of generated plans
+**Recent Enhancements**:
+ - ✅ NOAA weather forecast integration
+ - ✅ USGS water-condition integration
+ - ✅ OpenAI itinerary generation (GPT-4o)
+ - ✅ RAG fishing knowledge snippets
+ - ✅ Supabase persistence & RLS policies
 
 #### chat_guide Function
 **Purpose**: Provides AI-powered assistance for trip-related questions.
@@ -262,7 +262,7 @@ StoredTrip {
 - [x] **User Authentication**: Magic link login with Supabase Auth
 - [x] **Trip Planning Form**: Complete form with validation using React Hook Form + Zod
 - [x] **Map Visualization**: Interactive Mapbox integration with waypoint markers
-- [x] **Basic Trip Generation**: MVP backend function returning mock data
+- [x] **AI-Powered Trip Generation**: Edge Function returns real itineraries using external data & LLM
 - [x] **Client-side Storage**: IndexedDB integration for offline trip access
 - [x] **Responsive Design**: Mobile-friendly UI with Tailwind CSS
 
@@ -283,21 +283,22 @@ StoredTrip {
 ### 🚧 Partially Implemented Features
 
 #### Backend Integration
-- [⚠️] **AI Trip Planning**: Mock data in place, needs real AI integration
-  - **Todo**: Integrate OpenAI API for intelligent planning
-  - **Todo**: Add NOAA weather data integration
-  - **Todo**: Implement USGS water condition data
-  - **Todo**: Create fishing knowledge RAG system
+- [x] **AI Trip Planning**: Integrated OpenAI, NOAA, USGS, and knowledge-base RAG.
+  - **Todo**: Refine USGS data incorporation
+  - **Todo**: Improve RAG implementation
+  - **Todo**: Improve waypoint accuracy, maybe rethink the map and use it as a tool to find location instead of waypoints
 
 - [⚠️] **Chat Guide Backend**: Frontend ready, backend function missing
   - **Todo**: Implement chat_guide Edge Function
   - **Todo**: Add conversation context management
   - **Todo**: Integrate with trip plan data for contextual responses
 
-- [⚠️] **Data Persistence**: Client-side working, server-side needed
-  - **Todo**: Create Supabase database schema for trips
-  - **Todo**: Implement trip history and sharing features
-  - **Todo**: Add user profile management
+- [x] **Data Persistence & User Features**
+  - Supabase `trips` & `profiles` schemas with RLS
+  - Trip history page with share toggles (private/public)
+  - Public trip viewer (`/trip/:planId`)
+  - Profile management page
+  - **Todo**: Fix trip history page, make functional
 
 #### Admin Features
 - [⚠️] **Admin Dashboard**: Basic UI in place, needs real data integration

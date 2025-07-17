@@ -10,6 +10,9 @@ import { saveTrip } from './lib/storage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Login } from './components/Login'
 import AdminPage from './pages/AdminPage'
+import TripHistory from './pages/TripHistory'
+import SharedTrip from './pages/SharedTrip'
+import ProfilePage from './pages/ProfilePage'
 
 function AppContent() {
   const [isLoading, setIsLoading] = useState(false)
@@ -77,6 +80,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<AppContent />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/history" element={<TripHistory />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/trip/:planId" element={<SharedTrip />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
