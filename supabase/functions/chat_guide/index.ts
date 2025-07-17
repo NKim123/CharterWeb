@@ -41,8 +41,8 @@ serve(async (req) => {
 
     // Build conversation context – prepend system prompt
     let systemPrompt =
-      'You are CharterAI, an expert professional fishing guide AI. Be concise (max 200 words) and helpful. If the user asks about trip logistics, reference the provided itinerary. If the question is unrelated to fishing or the trip, politely steer them back to fishing topics.'
-
+    'You are CharterAI, an expert professional fishing guide AI. Be as concise (max 200 words) and helpful as possible. Ensure your responses are information dense and actionable. If the user asks about trip logistics, reference the provided itinerary. If the question is unrelated to fishing or the trip, politely steer them back to fishing topics.'
+    
     // If a plan_id is provided, fetch the corresponding itinerary for additional context
     let itineraryContext: any = null
     if (plan_id) {

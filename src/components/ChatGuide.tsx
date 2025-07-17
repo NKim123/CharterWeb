@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { createParser } from 'eventsource-parser'
+import { createParser, type EventSourceMessage } from 'eventsource-parser'
 
 interface ChatGuideProps {
   planId: string
@@ -30,11 +30,28 @@ export function ChatGuide({ planId }: ChatGuideProps) {
     setIsLoading(true)
 
     try {
+      // Attach Supabase credentials to avoid 401 (Edge Functions expect an `apikey` header and optional user JWT)
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
+      }
+
+      // Include JWT if user is authenticated so RLS policies apply server-side
+      try {
+        const { supabase } = await import('../lib/supabaseClient')
+        const session = supabase.auth.getSession()
+        const { data } = await session
+        const token = data.session?.access_token
+        if (token) {
+          headers.Authorization = `Bearer ${token}`
+        }
+      } catch (_err) {
+        /* fallback – continue without JWT */
+      }
+
       const res = await fetch(`${import.meta.env.VITE_FUNCTIONS_URL}/chat_guide`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ plan_id: planId, messages: newMessages })
       })
 
@@ -46,32 +63,38 @@ export function ChatGuide({ planId }: ChatGuideProps) {
       const decoder = new TextDecoder('utf-8')
       let assistantMessage = ''
 
-      // @ts-ignore - event typing from library
-      const parser = createParser((event: any) => {
-        if (event.type === 'event') {
-          if (event.data === '[DONE]') {
-            setMessages((prev) => [...prev, { role: 'assistant', content: assistantMessage }])
+      const parser = createParser({
+        onEvent(event: EventSourceMessage) {
+          const text = event.data
+          if (text === '[DONE]') {
+            // Streaming complete – no need to push duplicate message
             assistantMessage = ''
-          } else {
-            assistantMessage += event.data
-            setMessages((prev) => {
-              const updated = [...prev]
-              // Update last assistant message or add new temporary one
-              if (updated[updated.length - 1]?.role === 'assistant') {
-                updated[updated.length - 1].content = assistantMessage
-              } else {
-                updated.push({ role: 'assistant', content: assistantMessage })
-              }
-              return [...updated]
-            })
+            return
           }
+
+          assistantMessage += text
+          setMessages((prev) => {
+            const updated = [...prev]
+            if (updated[updated.length - 1]?.role === 'assistant') {
+              updated[updated.length - 1].content = assistantMessage
+            } else {
+              updated.push({ role: 'assistant', content: assistantMessage })
+            }
+            return updated
+          })
         }
       })
 
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
-        parser.feed(decoder.decode(value))
+        if (done) {
+          // Flush any remaining decoder buffer
+          const remaining = decoder.decode(undefined, { stream: false })
+          if (remaining) parser.feed(remaining)
+          break
+        }
+        // Use streaming decode to avoid split multi-byte sequences producing replacement chars
+        parser.feed(decoder.decode(value, { stream: true }))
         scrollToBottom()
       }
     } catch (err) {
