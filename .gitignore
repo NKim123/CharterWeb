@@ -31,5 +31,3 @@ pnpm-debug.log*
 # Vite cache
 node_modules/.cache 
 node_modules
-
-src/assets/charterai-logo-notext.png
