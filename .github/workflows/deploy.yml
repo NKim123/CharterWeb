@@ -34,7 +34,11 @@ jobs:
         with:
           version: 1.158.0
       - name: Login to Supabase
-        run: supabase login --access-token $SUPABASE_ACCESS_TOKEN
+        run: supabase login --token "$SUPABASE_ACCESS_TOKEN" --no-browser
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Set Supabase token
+        run: echo "Token ready"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       - name: Link project
