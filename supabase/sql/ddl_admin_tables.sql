@@ -50,13 +50,9 @@ create policy "Edge functions can insert" on public.error_logs
 -- ADMIN USER VIEW (read-only list)
 -- ================================
 create or replace view public.admin_user_list as
-select id,
-       email,
-       raw_user_meta_data ->> 'role' as role,
-       created_at
-from auth.users;
-
-alter view public.admin_user_list enable row level security;
-
-create policy "Admins can read user list" on public.admin_user_list
-  for select using ((current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin');
+select  id,
+        email,
+        raw_user_meta_data ->> 'role' as role,
+        created_at
+from auth.users
+where (current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin';

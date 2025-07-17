@@ -288,25 +288,25 @@ StoredTrip {
   - **Todo**: Improve RAG implementation
   - **Todo**: Improve waypoint accuracy, maybe rethink the map and use it as a tool to find location instead of waypoints
   - **Todo**: Add data fields (shore/boat, more species, fly/spinning/casting)
-  - **Todo**: Add recommendations (gear to bring, more detailed stuff)
+  - **Todo**: Add recommendations (gear to bring, flowcharts/decision trees)
 
 - [⚠️] **Chat Guide Backend**: Frontend ready, backend function missing
   - **Todo**: Implement chat_guide Edge Function
   - **Todo**: Add conversation context management
   - **Todo**: Integrate with trip plan data for contextual responses
 
-- [x] **Data Persistence & User Features**
+- [⚠️] **Data Persistence & User Features**
   - Supabase `trips` & `profiles` schemas with RLS
   - Trip history page with share toggles (private/public)
   - Public trip viewer (`/trip/:planId`)
-  - Profile management page
+  - **Todo**: Profile management page doesn't work
 
 #### Admin Features
-- [⚠️] **Admin Dashboard**: Basic UI in place, needs real data integration
-  - **Todo**: Connect to real token usage tracking
-  - **Todo**: Implement error log aggregation from Edge Functions
-  - **Todo**: Add user management capabilities
-  - **Todo**: Create usage analytics and reporting
+- [x] **Admin Dashboard**: Data integrated, needs testing
+  - Connected to real token usage tracking
+  - Implemented error log aggregation from Edge Functions
+  - Added user management capabilities
+  - Createed usage analytics and reporting
 
 ### ❌ Missing Features
 
@@ -363,6 +363,7 @@ VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_MAPBOX_TOKEN=your_mapbox_token
 VITE_FUNCTIONS_URL=your_supabase_functions_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Backend (Supabase Dashboard)
 OPENAI_API_KEY=your_openai_api_key
