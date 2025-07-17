@@ -283,10 +283,12 @@ StoredTrip {
 ### 🚧 Partially Implemented Features
 
 #### Backend Integration
-- [x] **AI Trip Planning**: Integrated OpenAI, NOAA, USGS, and knowledge-base RAG.
+- [⚠️] **AI Trip Planning**: Integrated OpenAI, NOAA, USGS, and knowledge-base RAG.
   - **Todo**: Refine USGS data incorporation
   - **Todo**: Improve RAG implementation
   - **Todo**: Improve waypoint accuracy, maybe rethink the map and use it as a tool to find location instead of waypoints
+  - **Todo**: Add data fields (shore/boat, more species, fly/spinning/casting)
+  - **Todo**: Add recommendations (gear to bring, more detailed stuff)
 
 - [⚠️] **Chat Guide Backend**: Frontend ready, backend function missing
   - **Todo**: Implement chat_guide Edge Function
@@ -298,7 +300,6 @@ StoredTrip {
   - Trip history page with share toggles (private/public)
   - Public trip viewer (`/trip/:planId`)
   - Profile management page
-  - **Todo**: Fix trip history page, make functional
 
 #### Admin Features
 - [⚠️] **Admin Dashboard**: Basic UI in place, needs real data integration

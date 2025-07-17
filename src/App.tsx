@@ -5,6 +5,7 @@ import { Header } from './components/Header'
 import type { TripFormData } from './schemas/trip'
 import { planTrip } from './api/planTrip'
 import { MapView } from './components/MapView'
+import { ItineraryDetails } from './components/ItineraryDetails'
 import { ChatGuide } from './components/ChatGuide'
 import { saveTrip } from './lib/storage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -60,6 +61,11 @@ function AppContent() {
             <div className="mt-10">
               <h2 className="text-2xl font-bold mb-4">Map Preview</h2>
               <MapView waypoints={plan.itinerary.waypoints} />
+            </div>
+
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold mb-4">Your Trip Itinerary</h2>
+              <ItineraryDetails itinerary={plan.itinerary} />
             </div>
 
             <div className="mt-10">

@@ -241,16 +241,27 @@ Return JSON ONLY conforming to the Itinerary interface.`
         // Create a client passing along the user's JWT so RLS applies
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        const { createClient } = await import('https://deno.land/x/supabase_js@v2.1.0/mod.ts')
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
         const supabase = createClient(supabaseUrl, supabaseAnonKey, {
           global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
         })
 
-        await supabase.from('trips').insert({
+        // Extract bearer token from request header ("Bearer <jwt>")
+        const bearer = req.headers.get('Authorization') || ''
+        const jwt = bearer.replace(/^Bearer\s+/i, '')
+
+        // Decode the JWT locally to obtain `sub` (user-id) instead of a network lookup:
+        const payload = JSON.parse(atob(jwt.split('.')[1]))
+        const userId = payload.sub           // <- always present in a valid access token
+
+        // Explicitly capture and throw any DB error so it surfaces in logs:
+        const { error } = await supabase.from('trips').insert({
+          user_id: userId,
           plan_id: responsePayload.plan_id,
           itinerary,
           generated_at: responsePayload.generated_at
         })
+        if (error) throw error
       }
     } catch (dbErr) {
       console.error('Failed to persist trip:', dbErr)

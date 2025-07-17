@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { fetchTripByPlanId, TripRecord } from '../api/trips'
 import { MapView } from '../components/MapView'
+import { ItineraryDetails } from '../components/ItineraryDetails'
 
 export default function SharedTrip() {
   const { planId } = useParams<{ planId: string }>()
@@ -32,14 +33,13 @@ export default function SharedTrip() {
       <h1 className="text-3xl font-bold mb-4">Trip {trip.plan_id}</h1>
       <p className="text-gray-500 mb-6">Generated {new Date(trip.generated_at).toLocaleString()}</p>
 
-      {trip.itinerary?.waypoints && <MapView waypoints={trip.itinerary.waypoints} height="400px" />}
+      {trip.itinerary?.waypoints && (
+        <div className="mb-12">
+          <MapView waypoints={trip.itinerary.waypoints} height="400px" />
+        </div>
+      )}
 
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-2">Itinerary JSON</h2>
-        <pre className="bg-slate-100 p-4 rounded text-xs overflow-auto max-h-96">
-          {JSON.stringify(trip.itinerary, null, 2)}
-        </pre>
-      </div>
+      {trip.itinerary && <ItineraryDetails itinerary={trip.itinerary} />}
     </div>
   )
 } 
