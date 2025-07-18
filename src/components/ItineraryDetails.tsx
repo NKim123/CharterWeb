@@ -8,7 +8,7 @@ interface ItineraryDetailsProps {
 export function ItineraryDetails({ itinerary }: ItineraryDetailsProps) {
   if (!itinerary) return null
 
-  const { waypoints, weather, regulations, tips } = itinerary
+  const { waypoints, weather, regulations, tips, tides, moonPhase, gear, checklist } = itinerary
 
   // Create a concise weather summary fallback in case of varied structures
   const weatherSummary = (() => {
@@ -151,6 +151,48 @@ export function ItineraryDetails({ itinerary }: ItineraryDetailsProps) {
           </ul>
         </section>
       )}
+
+      {/* Tides & Moon Phase */}
+      {(tides || moonPhase) && (
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Tides & Moon</h2>
+          {tides && (
+            <p className="text-sm mb-2 text-gray-700">
+              Next High: {tides.nextHigh} • Next Low: {tides.nextLow}
+            </p>
+          )}
+          {moonPhase && (
+            <p className="text-sm text-gray-700">Moon Phase: {moonPhase}</p>
+          )}
+        </section>
+      )}
+
+      {/* Gear Recommendations */}
+      {(gear && gear.length > 0) || (checklist && checklist.length > 0) ? (
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Gear & Checklist</h2>
+          {gear && gear.length > 0 && (
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Recommended Gear</h3>
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {gear.map((g) => (
+                  <li key={g}>{g}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {checklist && checklist.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-2">Pre-Trip Checklist</h3>
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {checklist.map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      ) : null}
     </div>
   )
 } 

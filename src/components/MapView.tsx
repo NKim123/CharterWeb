@@ -58,7 +58,30 @@ export function MapView({ waypoints, height = '500px' }: MapViewProps) {
 
     mapRef.current.on('error', (e) => {
       console.error('Mapbox error', e.error);
-    });
+    })
+
+    // NEW: click handler → ask summarizer
+    mapRef.current.on('click', async (e: any) => {
+      const { lngLat } = e
+      const confirm = window.confirm('Summarize fishing at this spot?')
+      if (!confirm) return
+      try {
+        const res = await fetch(`${import.meta.env.VITE_FUNCTIONS_URL}/summarize_pin`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
+          },
+          body: JSON.stringify({ lon: lngLat.lng, lat: lngLat.lat })
+        })
+        const json = await res.json()
+        if (json.summary) {
+          new mapboxgl.Popup().setLngLat(lngLat).setHTML(`<p>${json.summary}</p>`).addTo(mapRef.current as mapboxgl.Map)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    })
 
     return () => {
       mapRef.current?.remove()

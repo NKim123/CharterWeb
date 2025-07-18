@@ -115,6 +115,56 @@ async function fetchWaterConditions(lat: number, lon: number): Promise<{ summary
   return { summary, details: { discharge, temperature } }
 }
 
+/** Fetch tide extremes summary using WorldTides (demo key) */
+async function fetchTideSummary(lat: number, lon: number, date: string): Promise<{ summary: string; nextHigh: string; nextLow: string }> {
+  const ts = Math.floor(new Date(date).getTime() / 1000)
+  // demo key is severely rate-limited – acceptable for dev; replace with env var in prod
+  const url = `https://www.worldtides.info/api/v3?extremes&lat=${lat}&lon=${lon}&start=${ts}&length=43200&key=demo`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('Tide API error')
+    const json: any = await res.json()
+    const extremes = json.extremes as Array<any>
+    const nextHigh = extremes.find((e) => e.type === 'High')?.date || 'N/A'
+    const nextLow = extremes.find((e) => e.type === 'Low')?.date || 'N/A'
+    return {
+      summary: `Next High: ${nextHigh}, Next Low: ${nextLow}`,
+      nextHigh,
+      nextLow
+    }
+  } catch (_err) {
+    return { summary: 'Tide data unavailable', nextHigh: 'N/A', nextLow: 'N/A' }
+  }
+}
+
+/** Calculate simple moon phase description for given date */
+function getMoonPhase(dateStr: string): string {
+  const date = new Date(dateStr)
+  const year = date.getUTCFullYear()
+  const month = date.getUTCMonth() + 1 // 1-based
+  const day = date.getUTCDate()
+  // Simple Conway algorithm
+  let r = year % 100
+  r %= 19
+  if (r > 9) r -= 19
+  r = ((r * 11) % 30) + month + day
+  if (month < 3) r += 2
+  r -= (year < 2000 ? 4 : 8.3) as any
+  r = Math.floor(r + 0.5) % 30
+  const phases = [
+    'New Moon',
+    'Waxing Crescent',
+    'First Quarter',
+    'Waxing Gibbous',
+    'Full Moon',
+    'Waning Gibbous',
+    'Last Quarter',
+    'Waning Crescent'
+  ]
+  const idx = Math.round((r / 30) * 8) % 8
+  return phases[idx]
+}
+
 // Very small, static knowledge base – in a real-world scenario this would live in a
 // Postgres + pgvector table and be retrieved via similarity search
 interface KnowledgeChunk {
@@ -154,22 +204,28 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { location, date, targetSpecies, duration, experience } = body as {
+    const { location, date, targetSpecies, duration, experience, styles, platform, numDays } = body as {
       location: string
       date: string
       targetSpecies: string[]
       duration: string
       experience: string
+      styles?: string[]
+      platform?: string
+      numDays?: number
     }
 
     // 1) Geocode → lat/lon
     const { lat, lon, displayName } = await geocodeLocation(location)
 
     // 2) External data integrations (run in parallel!)
-    const [weather, water] = await Promise.all([
+    const [weather, water, tides] = await Promise.all([
       fetchWeatherSummary(lat, lon),
-      fetchWaterConditions(lat, lon)
+      fetchWaterConditions(lat, lon),
+      fetchTideSummary(lat, lon, date)
     ])
+
+    const moonPhase = getMoonPhase(date)
 
     // 3) Retrieve fishing knowledge (rudimentary RAG)
     const knowledgeSnippets = retrieveKnowledge(targetSpecies)
@@ -178,7 +234,7 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) throw new Error('Missing OPENAI_API_KEY env var')
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
 
-    const systemPrompt = `You are an expert professional fishing guide. Given user preferences, weather, water conditions, and domain knowledge, generate a JSON-formatted itinerary for a fishing trip that follows this TypeScript interface without additional text:
+    const systemPrompt = `You are an expert professional fishing guide. Given user preferences, weather, water conditions, tide info, moon phase, and domain knowledge, generate a JSON-formatted itinerary for a fishing trip that follows this TypeScript interface without additional text:
 interface Itinerary {
   waypoints: Array<{
     id: string; // unique id
@@ -191,18 +247,26 @@ interface Itinerary {
   }>;
   weather: any; // echo relevant weather details
   water: any;   // echo relevant water conditions
+  tides: { nextHigh: string; nextLow: string };
+  moonPhase: string;
+  gear: string[]; // rods, tackle, safety etc.
+  checklist: string[]; // licences, sunscreen, rain-gear etc.
   tips: string[];
 }`
 
     const userPrompt = `Trip details:
 Location: ${displayName} (lat ${lat}, lon ${lon})
 Date: ${date}
-Duration: ${duration}
+Duration: ${duration}${numDays ? ` (${numDays} days)` : ''}
 Experience: ${experience}
+Fishing Styles: ${(styles ?? []).join(', ') || 'N/A'}
+Platform: ${platform}
 Target Species: ${targetSpecies.join(', ')}
 
 Weather Forecast: ${weather.summary}
 Water Conditions: ${water.summary}
+Tide Summary: ${tides.summary}
+Moon Phase: ${moonPhase}
 
 Knowledge Snippets:\n- ${knowledgeSnippets.join('\n- ')}
 
@@ -236,7 +300,11 @@ Return JSON ONLY conforming to the Itinerary interface.`
 
     const responsePayload = {
       plan_id: randomId('plan_'),
-      itinerary,
+      itinerary: {
+        ...itinerary,
+        tides: { nextHigh: tides.nextHigh, nextLow: tides.nextLow },
+        moonPhase
+      },
       generated_at: new Date().toISOString()
     }
 

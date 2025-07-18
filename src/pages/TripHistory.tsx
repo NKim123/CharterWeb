@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { fetchTrips, toggleTripVisibility, TripRecord } from '../api/trips'
 import { Link } from 'react-router-dom'
 import { Header } from '../components/Header'
+import { supabase } from '../lib/supabaseClient'
 
 export default function TripHistory() {
   const [trips, setTrips] = useState<TripRecord[]>([])
@@ -35,6 +36,20 @@ export default function TripHistory() {
     }
   }
 
+  const handleReschedule = async (trip: TripRecord) => {
+    try {
+      const { data, error } = await supabase.functions.invoke<any>('reschedule', {
+        body: { plan_id: trip.plan_id }
+      })
+      if (error) throw error
+      alert('Trip rescheduled! New Plan ID: ' + data.plan_id)
+      loadTrips()
+    } catch (err) {
+      console.error(err)
+      alert('Failed to reschedule trip')
+    }
+  }
+
   return (
     <>
       <Header />
@@ -59,6 +74,12 @@ export default function TripHistory() {
                     className="text-sm underline"
                   >
                     {trip.visibility === 'private' ? 'Make Public' : 'Make Private'}
+                  </button>
+                  <button
+                    onClick={() => handleReschedule(trip)}
+                    className="text-sm underline text-accent"
+                  >
+                    Reschedule
                   </button>
                   <Link to={`/trip/${trip.plan_id}`} className="text-sm text-brand underline">
                     View

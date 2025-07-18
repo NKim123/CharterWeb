@@ -22,7 +22,9 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
     defaultValues: {
       targetSpecies: [],
       duration: 'full-day',
-      experience: 'intermediate'
+      experience: 'intermediate',
+      styles: ['spin'],
+      platform: 'shore'
     }
   })
 
@@ -101,6 +103,61 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
             <p className="mt-1 text-sm text-red-600">{errors.targetSpecies.message}</p>
           )}
         </div>
+
+        {/* Fishing Styles */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Preferred Fishing Style(s) *
+          </label>
+          <div className="flex gap-4">
+            {['fly', 'spin', 'cast'].map((style) => (
+              <label key={style} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  value={style}
+                  {...register('styles')}
+                  className="rounded border-gray-300 text-accent focus:ring-accent"
+                />
+                <span className="capitalize text-sm">{style}</span>
+              </label>
+            ))}
+          </div>
+          {errors.styles && <p className="mt-1 text-sm text-red-600">{errors.styles.message}</p>}
+        </div>
+
+        {/* Platform */}
+        <div>
+          <label htmlFor="platform" className="block text-sm font-medium text-gray-700 mb-2">
+            Fishing From
+          </label>
+          <select
+            {...register('platform')}
+            id="platform"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
+          >
+            <option value="shore">Shore / Wading</option>
+            <option value="boat">Boat / Kayak</option>
+          </select>
+        </div>
+
+        {/* Number of Days – conditional */}
+        {watch('duration') === 'multi-day' && (
+          <div>
+            <label htmlFor="numDays" className="block text-sm font-medium text-gray-700 mb-2">
+              How many days?
+            </label>
+            <input
+              type="number"
+              min={2}
+              max={14}
+              step={1}
+              {...register('numDays', { valueAsNumber: true })}
+              id="numDays"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
+            />
+            {errors.numDays && <p className="mt-1 text-sm text-red-600">{errors.numDays.message}</p>}
+          </div>
+        )}
 
         {/* Duration */}
         <div>
