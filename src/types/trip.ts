@@ -13,6 +13,10 @@ export interface TripItinerary {
   weather: WeatherInfo
   regulations: RegulationInfo
   tips: string[]
+  tides?: TideInfo
+  moonPhase?: string
+  gear?: string[]
+  checklist?: string[]
 }
 
 export interface Waypoint {
@@ -38,4 +42,10 @@ export interface RegulationInfo {
   catchLimits: Record<string, number>
   sizeLimits: Record<string, { min: number; max: number }>
   closedAreas: string[]
+}
+
+export interface TideInfo {
+  nextHigh: string
+  nextLow: string
+  extremes?: Array<{ time: string; type: 'High' | 'Low'; height: number }>
 } 

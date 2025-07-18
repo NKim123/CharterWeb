@@ -280,76 +280,63 @@ StoredTrip {
 - [x] **Header/Navigation**: Role-based navigation with admin access
 - [x] **Login**: Smooth authentication experience
 
-### 🚧 Partially Implemented Features
+### 🚧 Development Backlog (pre-launch)
 
-#### Backend Integration
-- [⚠️] **AI Trip Planning**: Integrated OpenAI, NOAA, USGS, and knowledge-base RAG.
-  - **Todo**: Refine USGS data incorporation
-  - **Todo**: Improve RAG implementation
-  - **Todo**: Improve waypoint accuracy, maybe rethink the map and use it as a tool to find location instead of waypoints
-  - **Todo**: Add data fields (shore/boat, more species, fly/spinning/casting)
-  - **Todo**: Add recommendations (gear to bring, flowcharts/decision trees)
+Below is the implementation-aware backlog leading to an initial-release (v1.0).  Items marked ✅ already exist in the codebase and only need verification / polish, whereas items without a mark are new work.
 
-- [⚠️] **Chat Guide Backend**: Frontend ready, backend function missing
-  - **Todo**: Implement chat_guide Edge Function
-  - **Todo**: Add conversation context management
-  - **Todo**: Integrate with trip plan data for contextual responses
+1. Functional Gaps (blocking)
+   - ✅ NOAA weather + water conditions (present)
+   - Tide & Moon-phase integration → display in itinerary
+   - Gear / equipment recommendations (+ checklist UI)
+   - Advanced species list (≥50) & fishing styles (fly/spin/cast), shore/boat toggle
+   - Multi-day trip support (numDays input & UI)
+   - Trip rescheduling endpoint + button in history
+   - Map “drop a pin” summariser (Edge Function + Mapbox click)
 
-- [⚠️] **Data Persistence & User Features**
-  - Supabase `trips` & `profiles` schemas with RLS
-  - Trip history page with share toggles (private/public)
-  - Public trip viewer (`/trip/:planId`)
-  - **Todo**: Profile management page doesn't work
+2. Data, Security & Backend
+   - RLS hardening for all tables (chat_messages, token_usage…)
+   - Request rate-limiting in Edge Functions
+   - pgvector knowledge-base & similarity search
+   - Database migration scripts & CI automation
+   - Secrets management in Vercel / GitHub Actions
+   - (Optional) Stripe metered billing
 
-#### Admin Features
-- [x] **Admin Dashboard**: Data integrated, needs testing
-  - Connected to real token usage tracking
-  - Implemented error log aggregation from Edge Functions
-  - Added user management capabilities
-  - Createed usage analytics and reporting
+3. Quality & Reliability
+   - Jest / RTL unit tests for UI components
+   - Vitest integration tests for plan_trip & chat_guide
+   - Playwright E2E for login → plan trip → share flow
+   - Performance budget ≤ 250 kB gzip; lazy-load heavy libs
+   - Edge-function Sentry instrumentation
+   - Accessibility (WCAG 2.1 AA) pass
 
-### ❌ Missing Features
+4. PWA / Offline
+   - Cache itinerary + tiles
+   - Background sync queue for offline trip generation
+   - Manifest & icon polish
 
-#### Core Enhancements
-- [ ] **Advanced Trip Customization**
-  - **Todo**: Equipment recommendations based on target species
-  - **Todo**: Tide and moon phase integration
-  - **Todo**: Season-specific advice and timing
-  - **Todo**: Local guide and charter recommendations
-  - **Todo**: When the user drops a point in the map, provide a brief fishing summary of the area
+5. UI / UX Polish
+   - Responsive tweaks <375 px, iOS keyboard
+   - Empty/error illustrations
+   - Admin dashboard pagination & realtime logs
+   - Avatar upload via Supabase Storage
 
-- [ ] **Social Features**
-  - **Todo**: Trip sharing with other users
-  - **Todo**: Community fishing reports and reviews
-  - **Todo**: Photo uploads and trip documentation
-  - **Todo**: Leaderboards and achievement system
+6. Dev-Experience & Docs
+   - Contribution guide & pre-commit hooks
+   - Architecture diagram in docs/
 
-- [ ] **Advanced Planning**
-  - **Todo**: Multi-day trip itineraries with accommodations
-  - **Todo**: Budget planning and cost estimation
-  - **Todo**: Gear checklist generation
-  - **Todo**: Weather-based trip rescheduling suggestions
+7. Nice-to-have Post-launch
+   - Community reports / leaderboards
+   - Mobile shell with Expo
 
-#### Technical Debt
-- [ ] **Testing Infrastructure**
-  - **Todo**: Unit tests for components and utilities
-  - **Todo**: Integration tests for API functions
-  - **Todo**: E2E tests for critical user flows
-  - **Todo**: Performance testing and optimization
+---
 
-- [ ] **Security Enhancements**
-  - **Todo**: Rate limiting for AI API calls
-  - **Todo**: Input sanitization and validation
-  - **Todo**: API key rotation and security
-  - **Todo**: User data encryption and privacy controls
-
-- [ ] **Performance Optimization**
-  - **Todo**: Image optimization and lazy loading
-  - **Todo**: Bundle size optimization
-  - **Todo**: Database query optimization
-  - **Todo**: Caching strategies for external APIs
-
-
+## ✅ Newly Implemented Features (June 2025)
+1. Tide & Moon data added to itinerary (WorldTides + algorithmic moon phase)  
+2. Gear & checklist generation via GPT prompt + UI section  
+3. Expanded species list (50+) and new form inputs for fishing style & platform  
+4. Multi-day support (numDays field)  
+5. Reschedule Edge Function + TripHistory button  
+6. Map pin summariser (summarize_pin) with Mapbox click popup
 
 ## 🚀 Getting Started
 
@@ -384,24 +371,29 @@ npm run dev
 supabase functions deploy plan_trip
 ```
 
-## 🎯 Next Steps for Development
-
-### Priority 1: Backend AI Integration
-1. Implement real AI trip planning in `plan_trip` function
-2. Add weather and water condition data sources
-3. Create chat_guide function with streaming responses
-4. Set up database schema for trip persistence
-
-### Priority 2: Enhanced User Experience
-1. Add comprehensive error handling and loading states
-2. Implement trip history and management features
-3. Create equipment and gear recommendations
-4. Add social sharing capabilities
-
-### Priority 3: Production Readiness
-1. Add comprehensive testing suite
-2. Implement monitoring and analytics
-3. Optimize performance and bundle size
-4. Add security hardening and rate limiting
-
 This documentation provides a complete understanding of the CharterAI application architecture, current implementation status, and roadmap for future development. The codebase is well-structured with a modern tech stack, making it ready for both immediate use and future enhancements.
+
+## 🧪 Testing Methodology
+
+The repo now contains new functional surfaces (tide/moon integration, gear, rescheduling, pin summariser).  Use the following layered approach to test:
+
+1. Unit tests (Vitest/Jest)
+   - `plan_trip` helpers: `geocodeLocation`, `fetchTideSummary`, `getMoonPhase` (mock fetch).
+   - React components: `TripPlanningForm` (validation of new fields), `ItineraryDetails` renders new sections.
+
+2. Integration tests (Vitest)
+   - Call `plan_trip` Edge Function locally with `supabase functions serve` and assert JSON schema includes `tides`, `moonPhase`, `gear`, `checklist`.
+   - Invoke `reschedule` for an existing trip and verify new plan returned.
+
+3. E2E tests (Playwright)
+   - Login → create trip with multi-day & styles selected → confirm itinerary shows tide/moon & gear.
+   - Navigate to Trip History → click “Reschedule” → verify alert + new row.
+   - On Shared Trip page drop a pin on the map → expect popup with summary text.
+
+4. Performance & Accessibility
+   - Run Lighthouse CI in mobile & desktop modes; ensure performance ≥90, a11y ≥95.
+   - Bundle analysis via `vite build --report` stays ≤250 kB gzip.
+
+CI Configuration suggestion:  
+- `npm run test` → Jest/Vitest  
+- `npm run test:e2e` (Playwright) in GitHub Actions with Supabase local emulator.
