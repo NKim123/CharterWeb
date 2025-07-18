@@ -50,4 +50,5 @@ jobs:
       - name: Deploy Edge Functions
         run: |
           supabase functions deploy plan_trip
-          supabase functions deploy chat_guide 
+          supabase functions deploy chat_guide
+          supabase functions deploy reschedule 
