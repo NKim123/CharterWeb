@@ -10,11 +10,13 @@ import { ChatGuide } from './components/ChatGuide'
 import { saveTrip, loadTrip } from './lib/storage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Login } from './components/Login'
+import { PricingModal } from './components/PricingModal'
 import AdminPage from './pages/AdminPage'
 import TripHistory from './pages/TripHistory'
 import SharedTrip from './pages/SharedTrip'
 import ProfilePage from './pages/ProfilePage'
 import BackToTop from './components/BackToTop'
+import { getUserUsage } from './api/subscription'
 
 const PENDING_TRIP_KEY = 'pendingTripData'
 
@@ -23,6 +25,8 @@ function AppContent() {
   const [plan, setPlan] = useState<any | null>(null)
   const [pendingTrip, setPendingTrip] = useState<TripFormData | null>(null)
   const [showLogin, setShowLogin] = useState(false)
+  const [showPricing, setShowPricing] = useState(false)
+  const [usage, setUsage] = useState<any>(null)
 
   // Restore previously generated plan if available
   React.useEffect(() => {
@@ -35,6 +39,13 @@ function AppContent() {
   }, [])
 
   const { session } = useAuth()
+
+  // Load usage data when user is authenticated
+  React.useEffect(() => {
+    if (session) {
+      getUserUsage().then(setUsage).catch(console.error)
+    }
+  }, [session])
 
   const handleSubmit = async (data: TripFormData) => {
     // If user is not authenticated yet, store trip and prompt login
@@ -50,6 +61,12 @@ function AppContent() {
       return
     }
 
+    // Check if user can generate trips
+    if (!usage?.can_generate) {
+      setShowPricing(true)
+      return
+    }
+
     // Otherwise execute request immediately
     setIsLoading(true)
     try {
@@ -58,10 +75,17 @@ function AppContent() {
       setPlan(res)
       saveTrip(res.plan_id, res)
       localStorage.setItem('current_plan_id', res.plan_id)
+      // Refresh usage data after successful generation
+      getUserUsage().then(setUsage).catch(console.error)
       alert('Trip plan generated! Check console for details.')
     } catch (err: any) {
       console.error(err)
-      alert('Failed to generate trip plan.')
+      // Check if it's a usage limit error
+      if (err.message?.includes('free generation limit')) {
+        setShowPricing(true)
+      } else {
+        alert('Failed to generate trip plan.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -126,7 +150,10 @@ function AppContent() {
     <div className="min-h-screen bg-slate-50 pt-24 pb-8">
       {loginModal}
       <div className="container mx-auto">
-        <Header onSignInClick={() => setShowLogin(true)} />
+        <Header 
+          onSignInClick={() => setShowLogin(true)} 
+          onUpgradeClick={() => setShowPricing(true)}
+        />
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-brand mb-2">CharterAI</h1>
           <p className="text-gray-600">Your AI-powered fishing trip planner</p>
@@ -165,6 +192,12 @@ function AppContent() {
         )}
         <BackToTop />
       </div>
+
+      <PricingModal 
+        isOpen={showPricing}
+        onClose={() => setShowPricing(false)}
+        currentUsage={usage?.trip_generations || 0}
+      />
     </div>
   )
 }

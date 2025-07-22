@@ -1,18 +1,29 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import logo from '../assets/charterai-logo-notext.png'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { getUserUsage } from '../api/subscription'
+import { STRIPE_CONFIG } from '../lib/stripe'
 
 interface HeaderProps {
   /** If provided, triggers a login modal. */
   onSignInClick?: () => void
+  /** If provided, shows the pricing modal. */
+  onUpgradeClick?: () => void
 }
 
-export function Header({ onSignInClick }: HeaderProps) {
+export function Header({ onSignInClick, onUpgradeClick }: HeaderProps) {
   const { session, signOut } = useAuth()
   const role = (session?.user.user_metadata as any)?.role as string | undefined
 
   const [open, setOpen] = useState(false)
+  const [usage, setUsage] = useState<any>(null)
+
+  useEffect(() => {
+    if (session) {
+      getUserUsage().then(setUsage).catch(console.error)
+    }
+  }, [session])
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-2 text-sm ${isActive ? 'text-brand font-semibold' : 'text-gray-700'} hover:text-brand`
@@ -30,6 +41,21 @@ export function Header({ onSignInClick }: HeaderProps) {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-2">
+          {/* Usage indicator for free users */}
+          {session && usage && !usage.is_subscribed && (
+            <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+              <span>{usage.trip_generations}/{STRIPE_CONFIG.FREE_GENERATIONS_LIMIT} trips used</span>
+              {!usage.can_generate && (
+                <button 
+                  onClick={onUpgradeClick}
+                  className="text-brand hover:underline ml-1"
+                >
+                  Upgrade
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Authenticated links */}
           {session && (
             <>

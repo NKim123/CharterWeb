@@ -315,6 +315,39 @@ serve(async (req) => {
     // 3) Retrieve fishing knowledge (rudimentary RAG)
     const knowledgeSnippets = retrieveKnowledge(targetSpecies)
 
+    // Check if user can generate a trip
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    
+    if (supabaseUrl && supabaseAnonKey) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
+      })
+
+      // Extract bearer token from request header ("Bearer <jwt>")
+      const bearer = req.headers.get('Authorization') || ''
+      const jwt = bearer.replace(/^Bearer\s+/i, '')
+
+      // Decode the JWT locally to obtain `sub` (user-id) instead of a network lookup:
+      const payload = JSON.parse(atob(jwt.split('.')[1]))
+      const userId = payload.sub           // <- always present in a valid access token
+
+      // Check if user can generate a trip
+      const { data: canGenerate, error: canGenerateError } = await supabase
+        .rpc('can_user_generate_trip', { user_uuid: userId })
+
+      if (canGenerateError) {
+        throw new Error('Failed to check user permissions')
+      }
+
+      if (!canGenerate) {
+        throw new Error('You have reached your free generation limit. Please upgrade to continue generating trip plans.')
+      }
+    }
+
     // 4) Call OpenAI to generate itinerary
     if (!OPENAI_API_KEY) throw new Error('Missing OPENAI_API_KEY env var')
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
@@ -452,6 +485,19 @@ Return JSON ONLY conforming to the Itinerary interface.`
           })
         } catch (_usageErr) {
           console.warn('Failed to log token usage', _usageErr)
+        }
+
+        // ================= NEW: Usage tracking for trip generation ==================
+        try {
+          await supabase.from('usage_tracking').insert({
+            user_id: userId,
+            action_type: 'trip_generation',
+            plan_id: responsePayload.plan_id,
+            tokens_used: totalTokens,
+            cost_usd: (totalTokens / 1000) * 0.01 // Rough cost estimation
+          })
+        } catch (_trackingErr) {
+          console.warn('Failed to log usage tracking', _trackingErr)
         }
         // =============================================================
       }
