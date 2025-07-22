@@ -16,6 +16,8 @@ import SharedTrip from './pages/SharedTrip'
 import ProfilePage from './pages/ProfilePage'
 import BackToTop from './components/BackToTop'
 
+const PENDING_TRIP_KEY = 'pendingTripData'
+
 function AppContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [plan, setPlan] = useState<any | null>(null)
@@ -38,6 +40,12 @@ function AppContent() {
     // If user is not authenticated yet, store trip and prompt login
     if (!session) {
       setPendingTrip(data)
+      // Persist to survive full page redirect from magic-link flow
+      try {
+        localStorage.setItem(PENDING_TRIP_KEY, JSON.stringify(data))
+      } catch {
+        /* ignore quota errors */
+      }
       setShowLogin(true)
       return
     }
@@ -59,15 +67,31 @@ function AppContent() {
     }
   }
 
-  /* After user completes login, if there was a pending trip submit it */
+  // After auth, submit any pending trip stored in state or localStorage
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    if (session && pendingTrip) {
-      // prevent redundant submissions if effect triggers multiple times
-      const tripData = pendingTrip
+    if (!session) return
+
+    let tripData: TripFormData | null = null
+
+    if (pendingTrip) {
+      tripData = pendingTrip
       setPendingTrip(null)
+    } else {
+      const stored = localStorage.getItem(PENDING_TRIP_KEY)
+      if (stored) {
+        try {
+          tripData = JSON.parse(stored) as TripFormData
+        } catch {
+          /* ignore parse error */
+        }
+      }
+    }
+
+    if (tripData) {
+      localStorage.removeItem(PENDING_TRIP_KEY)
       setShowLogin(false)
-      // Submit in the background
+      // Submit in background
       handleSubmit(tripData)
     }
   }, [session])
