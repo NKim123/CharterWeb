@@ -21,7 +21,10 @@ alter table public.token_usage enable row level security;
 
 -- Only admins may SELECT all rows.  Each authenticated user may insert their own rows.
 create policy "Admins can read token usage" on public.token_usage
-  for select using ((current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin');
+  for select using (
+    (current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin'
+    or (current_setting('request.jwt.claims', true)::json -> 'user_metadata' ->> 'role') = 'admin'
+  );
 
 create policy "Owner can insert own usage" on public.token_usage
   for insert with check (auth.uid() = user_id);
@@ -41,7 +44,10 @@ create table if not exists public.error_logs (
 alter table public.error_logs enable row level security;
 
 create policy "Admins can read error logs" on public.error_logs
-  for select using ((current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin');
+  for select using (
+    (current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin'
+    or (current_setting('request.jwt.claims', true)::json -> 'user_metadata' ->> 'role') = 'admin'
+  );
 
 create policy "Edge functions can insert" on public.error_logs
   for insert with check (true);
@@ -55,4 +61,7 @@ select  id,
         raw_user_meta_data ->> 'role' as role,
         created_at
 from auth.users
-where (current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin';
+where (
+  (current_setting('request.jwt.claims', true)::json ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::json -> 'user_metadata' ->> 'role') = 'admin'
+);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -13,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { plan_id } = await req.json()
+    const { plan_id, date: newDate } = await req.json()
     if (!plan_id) throw new Error('plan_id is required')
 
     // Best-effort: fetch trip row, then call plan_trip with same preferences but updated date (today)
@@ -32,7 +33,7 @@ serve(async (req) => {
     if (!trip) throw new Error('Trip not found')
 
     // Prepare payload for plan_trip (reuse original with new date today)
-    const payload = { ...trip.preferences, date: new Date().toISOString().split('T')[0] }
+    const payload = { ...trip.preferences, date: (newDate || new Date().toISOString().split('T')[0]) }
 
     // Invoke existing plan_trip function internally
     const resp = await fetch(`${supabaseUrl}/functions/v1/plan_trip`, {

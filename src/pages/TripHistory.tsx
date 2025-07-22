@@ -37,9 +37,11 @@ export default function TripHistory() {
   }
 
   const handleReschedule = async (trip: TripRecord) => {
+    const input = prompt('Enter new date (YYYY-MM-DD) or leave blank for today:') || ''
+    const date = input.trim()
     try {
       const { data, error } = await supabase.functions.invoke<any>('reschedule', {
-        body: { plan_id: trip.plan_id }
+        body: { plan_id: trip.plan_id, date }
       })
       if (error) throw error
       alert('Trip rescheduled! New Plan ID: ' + data.plan_id)

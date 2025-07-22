@@ -9,7 +9,8 @@ export interface TripPlan {
 }
 
 export interface TripItinerary {
-  waypoints: Waypoint[]
+  pointsOfInterest?: Waypoint[]
+  waypoints?: Waypoint[] // deprecated – keep for backward compatibility
   weather: WeatherInfo
   regulations: RegulationInfo
   tips: string[]
@@ -17,6 +18,8 @@ export interface TripItinerary {
   moonPhase?: string
   gear?: string[]
   checklist?: string[]
+  decisionTree?: Array<{ condition: string; action: string }>
+  summary?: string
 }
 
 export interface Waypoint {

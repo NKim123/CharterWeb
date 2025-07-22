@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { tripFormSchema, type TripFormData, commonSpecies } from '../schemas/trip'
+import { LocationPicker } from './LocationPicker'
 
 interface TripPlanningFormProps {
   onSubmit: (data: TripFormData) => Promise<void>
@@ -21,7 +22,9 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
     resolver: zodResolver(tripFormSchema),
     defaultValues: {
       targetSpecies: [],
-      duration: 'full-day',
+      duration: 'custom',
+      startTime: '06:00',
+      endTime: '14:00',
       experience: 'intermediate',
       styles: ['spin'],
       platform: 'shore'
@@ -38,6 +41,7 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
   }
 
   const watchedSpecies = watch('targetSpecies')
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   return (
     <div className="mx-auto p-6 bg-white rounded-lg shadow-lg max-w-full md:max-w-2xl lg:max-w-3xl">
@@ -52,17 +56,31 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
           <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
             Where do you want to fish? *
           </label>
-          <input
-            {...register('location')}
-            type="text"
-            id="location"
-            placeholder="e.g., Lake Michigan, Florida Keys, Columbia River"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
-          />
-          {errors.location && (
-            <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
-          )}
+          <div className="flex gap-2">
+            <input
+              {...register('location')}
+              type="text"
+              id="location"
+              placeholder="Select on map or type manually"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
+            />
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
+            >
+              Pick on Map
+            </button>
+          </div>
+          {errors.location && <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>}
         </div>
+
+        {pickerOpen && (
+          <LocationPicker
+            onSelect={(loc) => setValue('location', loc)}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
 
         {/* Date */}
         <div>
@@ -73,7 +91,7 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
             {...register('date')}
             type="date"
             id="date"
-            min={new Date().toISOString().split('T')[0]}
+            min={new Date().toLocaleDateString('en-CA')}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
           />
           {errors.date && (
@@ -159,21 +177,35 @@ export function TripPlanningForm({ onSubmit, isLoading = false }: TripPlanningFo
           </div>
         )}
 
-        {/* Duration */}
-        <div>
-          <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
-            Trip Duration
-          </label>
-          <select
-            {...register('duration')}
-            id="duration"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
-          >
-            <option value="half-day">Half Day (4-6 hours)</option>
-            <option value="full-day">Full Day (8-10 hours)</option>
-            <option value="multi-day">Multi Day (2+ days)</option>
-          </select>
+        {/* Time Window */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
+              Start Time *
+            </label>
+            <input
+              type="time"
+              {...register('startTime')}
+              id="startTime"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
+            />
+            {errors.startTime && <p className="mt-1 text-sm text-red-600">{errors.startTime.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
+              End Time *
+            </label>
+            <input
+              type="time"
+              {...register('endTime')}
+              id="endTime"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
+            />
+            {errors.endTime && <p className="mt-1 text-sm text-red-600">{errors.endTime.message}</p>}
+          </div>
         </div>
+        {/* Duration hidden field to satisfy backend */}
+        <input type="hidden" value="custom" {...register('duration')} />
 
         {/* Experience Level */}
         <div>

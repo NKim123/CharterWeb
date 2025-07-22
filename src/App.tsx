@@ -81,22 +81,24 @@ function AppContent() {
               </button>
             </div>
 
-            {/* Map & Itinerary – stack on mobile, side-by-side on large screens */}
-            <div className="mt-6 lg:grid lg:grid-cols-2 lg:gap-8">
+            {/* New responsive grid: Map | Itinerary | Chat */}
+            <div className="mt-6 grid lg:grid-cols-[1fr_2fr_1fr] gap-8">
+              {/* Map */}
               <div>
                 <h2 className="text-2xl font-bold mb-4">Map Preview</h2>
-                <MapView waypoints={plan.itinerary.waypoints} />
+                <MapView waypoints={(plan.itinerary.pointsOfInterest ?? plan.itinerary.waypoints) || []} />
               </div>
 
-              <div className="mt-10 lg:mt-0">
-                <h2 className="text-2xl font-bold mb-4">Your Trip Itinerary</h2>
+              {/* Itinerary Details */}
+              <div>
                 <ItineraryDetails itinerary={plan.itinerary} />
               </div>
-            </div>
 
-            <div className="mt-10">
-              <h2 className="text-2xl font-bold mb-4">Ask the AI Guide</h2>
-              <ChatGuide planId={plan.plan_id} />
+              {/* Chat Guide – sticky on large screens */}
+              <div className="lg:sticky lg:top-24">
+                <h2 className="text-2xl font-bold mb-4">Ask the AI Guide</h2>
+                <ChatGuide planId={plan.plan_id} />
+              </div>
             </div>
           </>
         )}

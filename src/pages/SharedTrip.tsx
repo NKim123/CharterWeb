@@ -39,24 +39,25 @@ export default function SharedTrip() {
 
         {/* Map & Itinerary – responsive grid */}
         {trip.itinerary && (
-          <>
-            <div className="lg:grid lg:grid-cols-2 lg:gap-8 mb-12">
-              <div>
-                {trip.itinerary.waypoints && (
-                  <MapView waypoints={trip.itinerary.waypoints} height="400px" />
-                )}
-              </div>
-              <div className="mt-10 lg:mt-0">
-                <ItineraryDetails itinerary={trip.itinerary} />
-              </div>
+          <div className="grid lg:grid-cols-[1fr_2fr_1fr] gap-8 mb-12 mt-6">
+            {/* Map */}
+            <div>
+               { (trip.itinerary.pointsOfInterest || trip.itinerary.waypoints) && (
+                 <MapView waypoints={(trip.itinerary.pointsOfInterest ?? trip.itinerary.waypoints) || []} height="400px" />
+               )}
             </div>
 
-            {/* Chat Guide */}
-            <div className="mt-10">
+            {/* Itinerary */}
+            <div>
+              <ItineraryDetails itinerary={trip.itinerary} />
+            </div>
+
+            {/* Chat – sticky */}
+            <div className="lg:sticky lg:top-24">
               <h2 className="text-2xl font-bold mb-4">Ask the AI Guide</h2>
               <ChatGuide planId={trip.plan_id} />
             </div>
-          </>
+          </div>
         )}
       </div>
     </>

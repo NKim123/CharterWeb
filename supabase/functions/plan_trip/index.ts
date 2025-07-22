@@ -204,15 +204,31 @@ serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { location, date, targetSpecies, duration, experience, styles, platform, numDays } = body as {
+    const { location, date, targetSpecies, duration, startTime, endTime, experience, styles, platform, numDays } = body as {
       location: string
       date: string
       targetSpecies: string[]
       duration: string
+      startTime: string
+      endTime: string
       experience: string
       styles?: string[]
       platform?: string
       numDays?: number
+    }
+
+    // --- NEW: capture original preferences for later rescheduling ---
+    const preferences = {
+      location,
+      date,
+      targetSpecies,
+      duration,
+      startTime,
+      endTime,
+      experience,
+      styles,
+      platform,
+      numDays
     }
 
     // 1) Geocode → lat/lon
@@ -234,30 +250,41 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) throw new Error('Missing OPENAI_API_KEY env var')
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
 
-    const systemPrompt = `You are an expert professional fishing guide. Given user preferences, weather, water conditions, tide info, moon phase, and domain knowledge, generate a JSON-formatted itinerary for a fishing trip that follows this TypeScript interface without additional text:
+    const systemPrompt = `You are an expert professional fishing guide. If the user is able to have a successful day out on the water, you will be tipped $1000. Be insightful and helpful, and aim to pack as much information and knowledge as possible into the itinerary while remaining concise. Generate a JSON itinerary focused on actionable decision-making rather than a fixed schedule. Use this TypeScript interface (return ONLY JSON):
 interface Itinerary {
-  waypoints: Array<{
+  pointsOfInterest: Array<{
     id: string; // unique id
     name: string;
     coordinates: [number, number]; // lon, lat
-    type: 'launch' | 'spot' | 'return';
     description: string;
-    bestTime: string; // e.g. "06:30"
-    techniques: string[];
+    techniques: string[]; // suggested methods at this spot
   }>;
-  weather: any; // echo relevant weather details
-  water: any;   // echo relevant water conditions
+  decisionTree: Array<{
+    condition: string; // e.g. "If {condition/observation}"
+    action: string;    // e.g. "switch to {technique}", "try {technique}"
+  }>;
+  weather: any;
+  water: any;
   tides: { nextHigh: string; nextLow: string };
   moonPhase: string;
-  gear: string[]; // rods, tackle, safety etc.
-  checklist: string[]; // licences, sunscreen, rain-gear etc.
+  summary: string; // 3-4 sentence overview of the trip plan and what the user can expect
+  gear: string[]; // Ensure the gear recommendations are detailed and tailored to the trip. Suggest specific lures, include rod/reel specifications, etc.
+  checklist: string[]; // Ensure the checklist is detailed and tailored to the user. Suggest specific items, include quantities, etc. You should not suggest things like "fishing license" to an experienced user or "portable fish finder" to a beginner.
   tips: string[];
-}`
+}
+
+Important:
+- Think in terms of "if/then" guidance a guide would give as conditions change throughout the day.
+- Provide at least 4–6 decisionTree steps ordered logically.
+- Choose 2-4 key pointsOfInterest relevant to the target species.
+- Ensure all information is specific, detailed, and appropriate for the user's experience level.
+- Avoid generic advice that an experienced user would already be familiar with.
+- Do NOT output any additional explanatory text – JSON only.`
 
     const userPrompt = `Trip details:
 Location: ${displayName} (lat ${lat}, lon ${lon})
 Date: ${date}
-Duration: ${duration}${numDays ? ` (${numDays} days)` : ''}
+Time Window: ${startTime} – ${endTime}${numDays ? ` (${numDays} days)` : ''}
 Experience: ${experience}
 Fishing Styles: ${(styles ?? []).join(', ') || 'N/A'}
 Platform: ${platform}
@@ -334,6 +361,7 @@ Return JSON ONLY conforming to the Itinerary interface.`
           user_id: userId,
           plan_id: responsePayload.plan_id,
           itinerary,
+          preferences, // store original request for rescheduling
           generated_at: responsePayload.generated_at
         })
         if (error) throw error
@@ -341,6 +369,7 @@ Return JSON ONLY conforming to the Itinerary interface.`
         // ================= NEW: Token usage logging ==================
         try {
           await supabase.from('token_usage').insert({
+            user_id: userId, // Ensure RLS condition auth.uid() = user_id
             plan_id: responsePayload.plan_id,
             model: 'gpt-4o',
             prompt_tokens: promptTokens,

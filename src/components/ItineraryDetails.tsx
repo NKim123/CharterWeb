@@ -8,7 +8,7 @@ interface ItineraryDetailsProps {
 export function ItineraryDetails({ itinerary }: ItineraryDetailsProps) {
   if (!itinerary) return null
 
-  const { waypoints, weather, regulations, tips, tides, moonPhase, gear, checklist } = itinerary
+  const { pointsOfInterest, waypoints, weather, regulations, tips, tides, moonPhase, gear, checklist, decisionTree, summary } = itinerary
 
   // Create a concise weather summary fallback in case of varied structures
   const weatherSummary = (() => {
@@ -57,34 +57,52 @@ export function ItineraryDetails({ itinerary }: ItineraryDetailsProps) {
 
   return (
     <div className="space-y-10">
-      {/* Waypoints */}
-      {waypoints && waypoints.length > 0 && (
+      {/* Trip Summary – placed first */}
+      {summary && (
         <section>
-          <h2 className="text-2xl font-bold mb-6">Waypoints</h2>
+          <h2 className="text-2xl font-bold mb-6">Trip Summary</h2>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-sm text-gray-700 whitespace-pre-line">{summary}</p>
+          </div>
+        </section>
+      )}
+
+      {/* Points of Interest / Waypoints */}
+      {(pointsOfInterest && pointsOfInterest.length > 0) || (waypoints && waypoints.length > 0) ? (
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Points of Interest</h2>
           <ol className="relative border-l border-accent">
-            {waypoints.map((wp, idx) => (
-              <li key={wp.id} className="mb-10 ml-6">
+            {(pointsOfInterest ?? waypoints ?? []).map((wp, idx) => (
+              <li key={wp.id || idx} className="mb-10 ml-6">
                 <span className="absolute -left-3 flex items-center justify-center w-6 h-6 rounded-full bg-accent text-white text-xs font-medium ring-8 ring-white">
                   {idx + 1}
                 </span>
                 <div className="bg-white rounded-lg shadow p-5">
                   <h3 className="text-lg font-semibold text-brand flex items-center gap-2">
                     {wp.name}
-                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-accent/10 text-accent capitalize">
-                      {wp.type}
-                    </span>
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">{wp.description}</p>
-                  <div className="text-sm mt-3 space-y-1">
-                    <p><span className="font-medium">Best Time:</span> {wp.bestTime}</p>
-                    {wp.techniques?.length > 0 && (
-                      <p><span className="font-medium">Techniques:</span> {wp.techniques.join(', ')}</p>
-                    )}
-                  </div>
+                  {wp.techniques?.length > 0 && (
+                    <p className="text-sm mt-3"><span className="font-medium">Techniques:</span> {wp.techniques.join(', ')}</p>
+                  )}
                 </div>
               </li>
             ))}
           </ol>
+        </section>
+      ) : null}
+
+      {/* Decision Tree */}
+      {decisionTree && decisionTree.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Decision Guide</h2>
+          <ul className="space-y-3">
+            {decisionTree.map((step, idx) => (
+              <li key={idx} className="bg-white rounded-lg shadow p-4 text-sm text-gray-700">
+                <p><span className="font-medium">{step.condition}</span>, then {step.action}</p>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

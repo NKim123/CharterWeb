@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { createParser, type EventSourceMessage } from 'eventsource-parser'
 
 interface ChatGuideProps {
@@ -14,10 +14,12 @@ export function ChatGuide({ planId }: ChatGuideProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' })
+    }
   }
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -67,8 +69,11 @@ export function ChatGuide({ planId }: ChatGuideProps) {
         onEvent(event: EventSourceMessage) {
           const text = event.data
           if (text === '[DONE]') {
-            // Streaming complete – no need to push duplicate message
-            assistantMessage = ''
+            return // end marker
+          }
+
+          if (!text.trim()) {
+            // Ignore keep-alive/empty events which would otherwise overwrite message
             return
           }
 
@@ -82,6 +87,9 @@ export function ChatGuide({ planId }: ChatGuideProps) {
             }
             return updated
           })
+
+          // Scroll within container
+          scrollToBottom()
         }
       })
 
@@ -95,7 +103,6 @@ export function ChatGuide({ planId }: ChatGuideProps) {
         }
         // Use streaming decode to avoid split multi-byte sequences producing replacement chars
         parser.feed(decoder.decode(value, { stream: true }))
-        scrollToBottom()
       }
     } catch (err) {
       console.error(err)
@@ -107,7 +114,7 @@ export function ChatGuide({ planId }: ChatGuideProps) {
 
   return (
     <div className="mx-auto bg-white rounded-lg shadow p-4 flex flex-col h-[600px] max-w-full lg:max-w-4xl">
-      <div className="flex-1 overflow-y-auto space-y-4 pb-4">
+      <div ref={containerRef} className="flex-1 overflow-y-auto space-y-4 pb-4">
         {messages.map((m, idx) => (
           <div
             key={idx}
@@ -116,7 +123,6 @@ export function ChatGuide({ planId }: ChatGuideProps) {
             {m.content}
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
       <form onSubmit={sendMessage} className="mt-auto flex gap-2">
         <input

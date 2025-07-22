@@ -1,18 +1,18 @@
 import { z } from 'zod'
 
 export const tripFormSchema = z.object({
-  location: z.string().min(1, 'Location is required').max(100, 'Location too long'),
+  location: z.string().min(1, 'Location is required').max(200, 'Location too long'),
   date: z.string().min(1, 'Date is required').refine(
     (date) => {
-      const selectedDate = new Date(date)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      return selectedDate >= today
+      const todayStr = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local tz
+      return date >= todayStr
     },
     'Date must be today or in the future'
   ),
   targetSpecies: z.array(z.string()).min(1, 'Select at least one target species').max(5, 'Maximum 5 species'),
-  duration: z.enum(['half-day', 'full-day', 'multi-day']).default('full-day'),
+  duration: z.enum(['half-day', 'full-day', 'multi-day', 'custom']).default('custom'),
+  startTime: z.string().min(1, 'Start time required').regex(/^\d{2}:\d{2}$/),
+  endTime: z.string().min(1, 'End time required').regex(/^\d{2}:\d{2}$/),
   experience: z.enum(['beginner', 'intermediate', 'expert']).default('intermediate'),
   /* NEW FIELDS */
   styles: z.array(z.enum(['fly', 'spin', 'cast'])).min(1, 'Select at least one style'),
@@ -30,6 +30,10 @@ export const tripFormSchema = z.object({
     message: 'Please enter number of days',
     path: ['numDays']
   })
+  .refine((data) => {
+    if (!data.startTime || !data.endTime) return false
+    return data.endTime > data.startTime
+  }, { message: 'End time must be after start time', path: ['endTime'] })
 
 export type TripFormData = z.infer<typeof tripFormSchema>
 

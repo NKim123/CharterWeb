@@ -397,3 +397,88 @@ The repo now contains new functional surfaces (tide/moon integration, gear, resc
 CI Configuration suggestion:  
 - `npm run test` → Jest/Vitest  
 - `npm run test:e2e` (Playwright) in GitHub Actions with Supabase local emulator.
+
+remove summarize feature in itineraries
+minimap in trip generation
+page/step based information gathering, tailor species selection
+
+## 🆕 Recent Updates (July 2025)
+
+CharterAI has undergone several improvements based on early user feedback:
+
+1. **Time-Window Planning** – Trip form now captures exact `startTime` and `endTime` (HH:MM) instead of generic duration presets. Validation ensures the end time is after the start time.
+2. **Map-Based Location Picker** – Users can click “Pick on Map” to drop a pin and reverse-geocode the location.
+3. **Itinerary Format Overhaul**
+   - `pointsOfInterest` replaces raw waypoints (cleaner list shown on map).
+   - `decisionTree` offers actionable *if/then* guidance as conditions change.
+   - Concise `summary` (3-4 sentences) now appears at the top of the itinerary.
+4. **Admin Dashboard Fixes** – Usage monitoring and error logs now populate correctly after RLS policy patches.
+5. **Reschedule Endpoint** – Edge function re-uses stored `preferences` and accepts an optional new date.
+6. **Chat UI Enhancements** – Streaming no longer blanks out; chat panel is sticky on large screens and scrolls smoothly within its own container.
+7. **Validation Tweaks** – Location max length increased to 200 chars; today’s date is correctly allowed in all time zones.
+
+---
+
+### Updated TripPlanningForm
+| Field | Type | Notes |
+|-------|------|-------|
+| `location` | string | Manual text or auto-filled via map picker (≤200 chars) |
+| `date` | YYYY-MM-DD | Today or future |
+| `startTime` | HH:MM | Required; defaults 06:00 |
+| `endTime` | HH:MM | Required; must be after `startTime` |
+| `targetSpecies` | string[] | 1-5 species from 50+ list |
+| `styles` | `'fly' | 'spin' | 'cast'`[] | ≥1 |
+| `platform` | `'shore' | 'boat'` | |
+| `experience` | `'beginner' | 'intermediate' | 'expert'` | |
+| `numDays` | number | Only when planning a multi-day trip |
+
+### plan_trip Input Schema (v2)
+```typescript
+{
+  location: string;
+  date: string;
+  startTime: string; // HH:MM
+  endTime: string;   // HH:MM
+  targetSpecies: string[];
+  styles: ('fly' | 'spin' | 'cast')[];
+  platform: 'shore' | 'boat';
+  experience: 'beginner' | 'intermediate' | 'expert';
+  numDays?: number;
+}
+```
+
+### plan_trip Output Schema (v2)
+```typescript
+{
+  plan_id: string;
+  itinerary: {
+    summary: string;
+    pointsOfInterest: Array<{
+      id: string;
+      name: string;
+      coordinates: [number, number];
+      description: string;
+      techniques: string[];
+    }>;
+    decisionTree: Array<{ condition: string; action: string }>;
+    weather: any;
+    water: any;
+    tides: { nextHigh: string; nextLow: string };
+    moonPhase: string;
+    gear: string[];
+    checklist: string[];
+    tips: string[];
+  };
+  generated_at: string;
+}
+```
+
+### New SQL Patches
+* `supabase/sql/patch_update_admin_policies.sql` – Alters existing RLS policies for admin reads.
+* `supabase/sql/patch_add_trip_preferences.sql` – Adds `preferences` column to `trips` for rescheduling.
+
+Run these scripts in the Supabase SQL editor **before deploying** updated edge functions.
+
+---
+
+> **Tip for contributors:** Remember to run `npm run lint` and `npm run test` before opening a PR. Continuous deployment via GitHub Actions will build the frontend and redeploy Edge Functions on merge to `main`.
