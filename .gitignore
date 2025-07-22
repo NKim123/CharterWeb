@@ -31,3 +31,6 @@ pnpm-debug.log*
 # Vite cache
 node_modules/.cache 
 node_modules
+
+IMPLEMENTATION_SUMMARY.md
+PAYMENT_SYSTEM_SETUP.md
