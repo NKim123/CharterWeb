@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import { TripPlanningForm } from './components/TripPlanningForm'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import TripPlanningWizard from './components/TripPlanningWizard'
 import { Header } from './components/Header'
 import type { TripFormData } from './schemas/trip'
 import { planTrip } from './api/planTrip'
@@ -71,7 +71,7 @@ function AppContent() {
           <p className="text-gray-600">Your AI-powered fishing trip planner</p>
         </header>
         
-        {!plan && <TripPlanningForm onSubmit={handleSubmit} isLoading={isLoading} />}
+        {!plan && <TripPlanningWizard onSubmit={handleSubmit} isLoading={isLoading} />}
 
         {plan && (
           <>

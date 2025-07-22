@@ -15,9 +15,10 @@ export interface Waypoint {
 interface MapViewProps {
   waypoints: Waypoint[]
   height?: string
+  enableSummary?: boolean // NEW optional prop to toggle summary behaviour
 }
 
-export function MapView({ waypoints, height = '500px' }: MapViewProps) {
+export function MapView({ waypoints, height = '500px', enableSummary = false }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
 
@@ -60,34 +61,35 @@ export function MapView({ waypoints, height = '500px' }: MapViewProps) {
       console.error('Mapbox error', e.error);
     })
 
-    // NEW: click handler → ask summarizer
-    mapRef.current.on('click', async (e: any) => {
-      const { lngLat } = e
-      const confirm = window.confirm('Summarize fishing at this spot?')
-      if (!confirm) return
-      try {
-        const res = await fetch(`${import.meta.env.VITE_FUNCTIONS_URL}/summarize_pin`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
-          },
-          body: JSON.stringify({ lon: lngLat.lng, lat: lngLat.lat })
-        })
-        const json = await res.json()
-        if (json.summary) {
-          new mapboxgl.Popup().setLngLat(lngLat).setHTML(`<p>${json.summary}</p>`).addTo(mapRef.current as mapboxgl.Map)
+    // Summary click-handler (enabled only when prop is true & user holds Ctrl/Cmd)
+    if (enableSummary) {
+      mapRef.current.on('click', async (e: any) => {
+        const { lngLat } = e
+        if (!(e.originalEvent.metaKey || e.originalEvent.ctrlKey)) return
+        try {
+          const res = await fetch(`${import.meta.env.VITE_FUNCTIONS_URL}/summarize_pin`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
+            },
+            body: JSON.stringify({ lon: lngLat.lng, lat: lngLat.lat })
+          })
+          const json = await res.json()
+          if (json.summary) {
+            new mapboxgl.Popup().setLngLat(lngLat).setHTML(`<p>${json.summary}</p>`).addTo(mapRef.current as mapboxgl.Map)
+          }
+        } catch (err) {
+          console.error(err)
         }
-      } catch (err) {
-        console.error(err)
-      }
-    })
+      })
+    }
 
     return () => {
       mapRef.current?.remove()
       mapRef.current = null // allow re-init after StrictMode remount
     }
-  }, [waypoints])
+  }, [waypoints, enableSummary])
 
   return <div ref={mapContainer} style={{ width: '100%', height }} />
 } 

@@ -78,9 +78,19 @@ async function fetchWaterConditions(lat: number, lon: number): Promise<{ summary
   // define a small bounding box around point (0.1 deg ≈ 11 km)
   const bbox = [lon - 0.1, lat - 0.1, lon + 0.1, lat + 0.1].join(',')
   const url = `https://waterservices.usgs.gov/nwis/iv/?format=json&bBox=${bbox}&parameterCd=00010,00060&siteType=ST&siteStatus=active`
-  const resp = await fetch(url)
+  let resp
+  try {
+    resp = await fetch(url)
+  } catch (netErr) {
+    console.warn('USGS request network error', netErr)
+    return { summary: 'USGS service unreachable', details: null }
+  }
 
   if (!resp.ok) {
+    // USGS sometimes returns 400 for areas with no gauges; treat gracefully
+    if (resp.status === 400) {
+      return { summary: 'No nearby water gauge data', details: null }
+    }
     console.warn('USGS request failed', resp.status)
     return { summary: 'USGS service unavailable', details: null }
   }
@@ -115,24 +125,80 @@ async function fetchWaterConditions(lat: number, lon: number): Promise<{ summary
   return { summary, details: { discharge, temperature } }
 }
 
-/** Fetch tide extremes summary using WorldTides (demo key) */
+/**
+ * Fetch tide extremes summary using NOAA CO-OPS.
+ * Workflow:
+ *   1) Retrieve and cache NOAA station metadata (tide-prediction capable).
+ *   2) Select the closest station to the given lat/lon using Haversine distance.
+ *   3) Query the "predictions" endpoint for the requested date with interval=hilo.
+ */
+
+// Simple in-memory cache to avoid re-downloading the station list on every invocation
+let NOAA_STATIONS_CACHE: Array<{ id: string; name: string; lat: number; lng: number }> | null = null
+
 async function fetchTideSummary(lat: number, lon: number, date: string): Promise<{ summary: string; nextHigh: string; nextLow: string }> {
-  const ts = Math.floor(new Date(date).getTime() / 1000)
-  // demo key is severely rate-limited – acceptable for dev; replace with env var in prod
-  const url = `https://www.worldtides.info/api/v3?extremes&lat=${lat}&lon=${lon}&start=${ts}&length=43200&key=demo`
   try {
-    const res = await fetch(url)
-    if (!res.ok) throw new Error('Tide API error')
-    const json: any = await res.json()
-    const extremes = json.extremes as Array<any>
-    const nextHigh = extremes.find((e) => e.type === 'High')?.date || 'N/A'
-    const nextLow = extremes.find((e) => e.type === 'Low')?.date || 'N/A'
+    // 1) Load station metadata (once per cold start)
+    if (!NOAA_STATIONS_CACHE) {
+      const stationsUrl =
+        'https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions&units=english'
+      const resp = await fetch(stationsUrl)
+      if (!resp.ok) throw new Error('Failed to load NOAA stations list')
+      const json: any = await resp.json()
+      NOAA_STATIONS_CACHE = (json.stations as Array<any>).map((s) => ({
+        id: s.id,
+        name: s.name,
+        lat: parseFloat(s.lat),
+        lng: parseFloat(s.lng ?? s.lon)
+      }))
+    }
+
+    const stations = NOAA_STATIONS_CACHE!
+
+    // 2) Find nearest station via Haversine distance (earth radius ~6371 km)
+    const toRad = (d: number) => (d * Math.PI) / 180
+    const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const dLat = toRad(lat2 - lat1)
+      const dLon = toRad(lon2 - lon1)
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      return 6371 * c // km
+    }
+
+    let nearest = stations[0]
+    let minDist = haversine(lat, lon, nearest.lat, nearest.lng)
+    for (const st of stations.slice(1)) {
+      const d = haversine(lat, lon, st.lat, st.lng)
+      if (d < minDist) {
+        minDist = d
+        nearest = st
+      }
+    }
+
+    // 3) Fetch predictions for the date (high/low events)
+    const yyyymmdd = new Date(date).toISOString().slice(0, 10).replace(/-/g, '')
+    const predUrl =
+      `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?` +
+      `product=predictions&interval=hilo&station=${nearest.id}&begin_date=${yyyymmdd}&end_date=${yyyymmdd}&` +
+      `time_zone=lst_ldt&datum=MLLW&units=english&format=json`
+
+    const predResp = await fetch(predUrl)
+    if (!predResp.ok) throw new Error('NOAA predictions request failed')
+    const predJson: any = await predResp.json()
+    const predictions = predJson.predictions as Array<{ t: string; type: string }>
+
+    const nextHigh = predictions.find((p) => p.type === 'H')?.t || 'N/A'
+    const nextLow = predictions.find((p) => p.type === 'L')?.t || 'N/A'
+
     return {
       summary: `Next High: ${nextHigh}, Next Low: ${nextLow}`,
       nextHigh,
       nextLow
     }
-  } catch (_err) {
+  } catch (err) {
+    console.warn('NOAA tide fetch failed', err)
     return { summary: 'Tide data unavailable', nextHigh: 'N/A', nextLow: 'N/A' }
   }
 }
@@ -241,6 +307,9 @@ serve(async (req) => {
       fetchTideSummary(lat, lon, date)
     ])
 
+    // Debug: log tide data for visibility
+    console.log('Tide data for', location, date, ':', tides)
+
     const moonPhase = getMoonPhase(date)
 
     // 3) Retrieve fishing knowledge (rudimentary RAG)
@@ -293,6 +362,8 @@ Target Species: ${targetSpecies.join(', ')}
 Weather Forecast: ${weather.summary}
 Water Conditions: ${water.summary}
 Tide Summary: ${tides.summary}
+Tide Next High: ${tides.nextHigh}
+Tide Next Low: ${tides.nextLow}
 Moon Phase: ${moonPhase}
 
 Knowledge Snippets:\n- ${knowledgeSnippets.join('\n- ')}
@@ -335,6 +406,9 @@ Return JSON ONLY conforming to the Itinerary interface.`
       generated_at: new Date().toISOString()
     }
 
+    // Debug: log final itinerary tide info
+    console.log('Response itinerary tides:', responsePayload.itinerary.tides)
+
     // 5) Persist to database (best effort)
     try {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -360,7 +434,7 @@ Return JSON ONLY conforming to the Itinerary interface.`
         const { error } = await supabase.from('trips').insert({
           user_id: userId,
           plan_id: responsePayload.plan_id,
-          itinerary,
+          itinerary: responsePayload.itinerary,
           preferences, // store original request for rescheduling
           generated_at: responsePayload.generated_at
         })
