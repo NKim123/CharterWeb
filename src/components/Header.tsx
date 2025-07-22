@@ -3,7 +3,12 @@ import logo from '../assets/charterai-logo-notext.png'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-export function Header() {
+interface HeaderProps {
+  /** If provided, triggers a login modal. */
+  onSignInClick?: () => void
+}
+
+export function Header({ onSignInClick }: HeaderProps) {
   const { session, signOut } = useAuth()
   const role = (session?.user.user_metadata as any)?.role as string | undefined
 
@@ -11,6 +16,10 @@ export function Header() {
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-2 text-sm ${isActive ? 'text-brand font-semibold' : 'text-gray-700'} hover:text-brand`
+
+  // Adds block display & full-width styling for stacked mobile menu links.
+  const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `${linkClass({ isActive })} block w-full text-left`
 
   return (
     <header className="fixed top-0 inset-x-0 bg-white shadow z-20">
@@ -21,20 +30,36 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-2">
-          <NavLink to="/history" className={linkClass}>
-            My Trips
-          </NavLink>
-          <NavLink to="/profile" className={linkClass}>
-            Profile
-          </NavLink>
-          {role === 'admin' && (
-            <NavLink to="/admin" className={linkClass}>
-              Admin
-            </NavLink>
+          {/* Authenticated links */}
+          {session && (
+            <>
+              <NavLink to="/history" className={linkClass}>
+                My Trips
+              </NavLink>
+              <NavLink to="/profile" className={linkClass}>
+                Profile
+              </NavLink>
+              {role === 'admin' && (
+                <NavLink to="/admin" className={linkClass}>
+                  Admin
+                </NavLink>
+              )}
+            </>
           )}
-          <button onClick={() => signOut()} className="ml-2 text-sm text-gray-600 hover:text-brand">
-            Sign Out
-          </button>
+
+          {/* Auth action */}
+          {session ? (
+            <button onClick={() => signOut()} className="ml-2 text-sm text-gray-600 hover:text-brand">
+              Sign Out
+            </button>
+          ) : (
+            <button
+              onClick={onSignInClick}
+              className="ml-2 text-sm text-gray-600 hover:text-brand"
+            >
+              Sign In
+            </button>
+          )}
         </nav>
 
         {/* Mobile hamburger */}
@@ -52,26 +77,42 @@ export function Header() {
       {/* Mobile menu panel */}
       {open && (
         <nav className="md:hidden bg-white border-t shadow-inner">
-          <NavLink to="/history" className={linkClass} onClick={() => setOpen(false)}>
-            My Trips
-          </NavLink>
-          <NavLink to="/profile" className={linkClass} onClick={() => setOpen(false)}>
-            Profile
-          </NavLink>
-          {role === 'admin' && (
-            <NavLink to="/admin" className={linkClass} onClick={() => setOpen(false)}>
-              Admin
-            </NavLink>
+          {session && (
+            <>
+              <NavLink to="/history" className={mobileLinkClass} onClick={() => setOpen(false)}>
+                My Trips
+              </NavLink>
+              <NavLink to="/profile" className={mobileLinkClass} onClick={() => setOpen(false)}>
+                Profile
+              </NavLink>
+              {role === 'admin' && (
+                <NavLink to="/admin" className={mobileLinkClass} onClick={() => setOpen(false)}>
+                  Admin
+                </NavLink>
+              )}
+            </>
           )}
-          <button
-            onClick={() => {
-              signOut()
-              setOpen(false)
-            }}
-            className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-brand"
-          >
-            Sign Out
-          </button>
+          {session ? (
+            <button
+              onClick={() => {
+                signOut()
+                setOpen(false)
+              }}
+              className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-brand"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                onSignInClick?.()
+                setOpen(false)
+              }}
+              className="block w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-brand"
+            >
+              Sign In
+            </button>
+          )}
         </nav>
       )}
     </header>

@@ -4,7 +4,11 @@ import { supabase } from '../lib/supabaseClient'
 
 interface AuthContextValue {
   session: Session | null
+  isAuthenticated: boolean
+  // Current auth method – magic link email
   signInWithEmail: (email: string) => Promise<void>
+  // Placeholder for future password-based auth
+  signInWithPassword: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -32,6 +36,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
   }
 
+  // Future: migrate to username/password auth. For now this is a no-op throwing error.
+  const signInWithPassword = async (_email: string, _password: string) => {
+    throw new Error('Password sign-in not yet implemented')
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -39,7 +48,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextValue = {
     session,
+    isAuthenticated: !!session,
     signInWithEmail,
+    signInWithPassword,
     signOut
   }
 
