@@ -124,7 +124,7 @@ export function Login() {
         )}
         
         <div className="text-xs text-gray-500 mt-2">
-          Remaining attempts: {loginRateLimit.checkLimit().remaining}/5 per 15 minutes
+          Remaining attempts: {loginRateLimit.getStatus().remaining}/5 per 15 minutes
         </div>
       </div>
       

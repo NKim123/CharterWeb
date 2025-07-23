@@ -193,7 +193,7 @@ export function ChatGuide({ planId }: ChatGuideProps) {
         </button>
       </form>
       <div className="text-xs text-gray-500 mt-1">
-        Remaining messages: {chatRateLimit.checkLimit().remaining}/10 per 5 minutes
+        Remaining messages: {chatRateLimit.getStatus().remaining}/10 per 5 minutes
       </div>
     </div>
   )

@@ -103,6 +103,26 @@ export class ClientRateLimit {
     return { allowed, remaining, resetTime };
   }
   
+  /**
+   * Peek at the rate limit status without consuming an attempt.
+   */
+  getStatus(): { allowed: boolean; remaining: number; resetTime: number } {
+    const now = Date.now();
+    const windowStart = now - this.config.windowMs;
+
+    const stored = localStorage.getItem(this.key);
+    let requests: number[] = stored ? JSON.parse(stored) : [];
+
+    // Filter out old requests outside the window
+    requests = requests.filter(timestamp => timestamp > windowStart);
+
+    const allowed = requests.length < this.config.maxRequests;
+    const remaining = Math.max(0, this.config.maxRequests - requests.length);
+    const resetTime = requests.length > 0 ? requests[0] + this.config.windowMs : now + this.config.windowMs;
+
+    return { allowed, remaining, resetTime };
+  }
+  
   reset(): void {
     localStorage.removeItem(this.key);
   }

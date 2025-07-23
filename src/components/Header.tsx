@@ -14,7 +14,9 @@ interface HeaderProps {
 
 export function Header({ onSignInClick, onUpgradeClick }: HeaderProps) {
   const { session, signOut } = useAuth()
-  const role = (session?.user.user_metadata as any)?.role as string | undefined
+  // Prefer role from user_metadata (legacy) but fall back to app_metadata which is now the source of truth
+  const role = ((session?.user.user_metadata as any)?.role ??
+               (session?.user as any)?.app_metadata?.role) as string | undefined
 
   const [open, setOpen] = useState(false)
   const [usage, setUsage] = useState<any>(null)
