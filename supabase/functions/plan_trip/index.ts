@@ -496,6 +496,7 @@ Important:
 - Think in terms of "if/then" guidance a guide would give as conditions change throughout the day.
 - Provide at least 4–6 decisionTree steps ordered logically.
 - Choose 2-4 key pointsOfInterest relevant to the target species.
+- Do not repeat information from the decisionTree in the tips.
 - Ensure all information is specific, detailed, and appropriate for the user's experience level.
 - Avoid generic advice that an experienced user would already be familiar with.
 - Do NOT output any additional explanatory text – JSON only.`
