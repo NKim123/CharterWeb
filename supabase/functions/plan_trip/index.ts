@@ -1,6 +1,6 @@
 // @ts-nocheck // This file is executed in the Deno runtime within Supabase Edge Functions. We disable TypeScript checking to avoid Vite/Node linter errors for remote imports and Deno globals.
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { corsHeaders } from '../_shared/cors.ts'
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // OpenAI SDK for Deno
 import OpenAI from 'jsr:@openai/openai@5.10.1'
@@ -12,6 +12,100 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
 // ------------------------------
 
 const randomId = (prefix = '') => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+
+// Rate limiting per user (in memory - consider Redis for production)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const RATE_LIMIT = {
+  maxRequests: 10, // 10 trip generations per hour
+  windowMs: 60 * 60 * 1000 // 1 hour
+}
+
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
+  const now = Date.now()
+  const userLimit = rateLimitMap.get(userId)
+  
+  if (!userLimit || now > userLimit.resetTime) {
+    // Reset or initialize
+    rateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT.windowMs })
+    return { allowed: true, remaining: RATE_LIMIT.maxRequests - 1 }
+  }
+  
+  if (userLimit.count >= RATE_LIMIT.maxRequests) {
+    return { allowed: false, remaining: 0 }
+  }
+  
+  userLimit.count++
+  rateLimitMap.set(userId, userLimit)
+  return { allowed: true, remaining: RATE_LIMIT.maxRequests - userLimit.count }
+}
+
+// Input validation and sanitization
+function validateTripInput(input: any) {
+  const {
+    location,
+    date,
+    targetSpecies,
+    duration,
+    startTime,
+    endTime,
+    experience,
+    styles,
+    platform,
+    numDays
+  } = input
+
+  // Validate required fields
+  if (!location || typeof location !== 'string' || location.length < 1 || location.length > 200) {
+    throw new Error('Invalid location')
+  }
+
+  if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error('Invalid date format')
+  }
+
+  if (!Array.isArray(targetSpecies) || targetSpecies.length < 1 || targetSpecies.length > 5) {
+    throw new Error('Invalid target species selection')
+  }
+
+  if (!experience || !['beginner', 'intermediate', 'expert'].includes(experience)) {
+    throw new Error('Invalid experience level')
+  }
+
+  if (startTime && !/^\d{2}:\d{2}$/.test(startTime)) {
+    throw new Error('Invalid start time format')
+  }
+
+  if (endTime && !/^\d{2}:\d{2}$/.test(endTime)) {
+    throw new Error('Invalid end time format')
+  }
+
+  if (styles && (!Array.isArray(styles) || styles.length < 1)) {
+    throw new Error('Invalid fishing styles')
+  }
+
+  if (platform && !['shore', 'boat'].includes(platform)) {
+    throw new Error('Invalid platform')
+  }
+
+  if (numDays && (typeof numDays !== 'number' || numDays < 2 || numDays > 14)) {
+    throw new Error('Invalid number of days')
+  }
+
+  // Sanitize location input
+  const sanitizedLocation = location
+    .replace(/[<>{}[\]\\]/g, '') // Remove potentially dangerous characters
+    .trim()
+
+  if (sanitizedLocation.length < 1) {
+    throw new Error('Invalid location after sanitization')
+  }
+
+  return {
+    ...input,
+    location: sanitizedLocation,
+    targetSpecies: targetSpecies.map((s: string) => String(s).slice(0, 50)), // Limit species name length
+  }
+}
 
 /** Geocode a textual location → { lat, lon } using OpenStreetMap Nominatim */
 async function geocodeLocation(location: string): Promise<{ lat: number; lon: number; displayName: string }> {
@@ -264,24 +358,47 @@ function retrieveKnowledge(targetSpecies: string[]): string[] {
 // ------------------------------
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin')
+  const corsHeaders = getCorsHeaders(origin)
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 
   try {
-    const body = await req.json()
-    const { location, date, targetSpecies, duration, startTime, endTime, experience, styles, platform, numDays } = body as {
-      location: string
-      date: string
-      targetSpecies: string[]
-      duration: string
-      startTime: string
-      endTime: string
-      experience: string
-      styles?: string[]
-      platform?: string
-      numDays?: number
+    // Validate authorization
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Missing or invalid authorization header')
     }
+    
+    const token = authHeader.slice(7)
+    let userId: string
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      userId = payload.sub
+      if (!userId) throw new Error('Invalid token payload')
+    } catch {
+      throw new Error('Invalid JWT token')
+    }
+    
+    // Check rate limit for trip generation
+    const rateCheck = checkRateLimit(userId)
+    if (!rateCheck.allowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. You can generate up to 10 trips per hour. Please wait before trying again.' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 429
+      })
+    }
+
+    const body = await req.json()
+    
+    // Validate and sanitize input
+    const validatedInput = validateTripInput(body)
+    const { location, date, targetSpecies, duration, startTime, endTime, experience, styles, platform, numDays } = validatedInput
 
     // --- NEW: capture original preferences for later rescheduling ---
     const preferences = {
@@ -512,7 +629,10 @@ Return JSON ONLY conforming to the Itinerary interface.`
     })
   } catch (err) {
     const message = (err as Error).message ?? err.toString()
-    console.error('plan_trip error:', err)
+    console.error('plan_trip error:', message.slice(0, 200)) // Limit log message length
+
+    // Sanitize error message to prevent information leakage
+    const safeMessage = getSafeErrorMessage(message)
 
     // ================= NEW: Persist error log ========================
     try {
@@ -527,8 +647,8 @@ Return JSON ONLY conforming to the Itinerary interface.`
         })
         await supabase.from('error_logs').insert({
           function_name: 'plan_trip',
-          error_message: message,
-          stack_trace: (err as Error)?.stack ?? null
+          error_message: message.slice(0, 500), // Limit stored message length
+          stack_trace: (err as Error)?.stack?.slice(0, 1000) ?? null
         })
       }
     } catch (logErr) {
@@ -536,11 +656,55 @@ Return JSON ONLY conforming to the Itinerary interface.`
     }
     // ================================================================
 
+    const origin = req.headers.get('Origin')
+    const corsHeaders = getCorsHeaders(origin)
+    
     // Distinguish client errors (bad input) from server errors
-    const clientError = message.toLowerCase().includes('location not found')
-    return new Response(JSON.stringify({ error: message }), {
+    const clientError = isClientError(message)
+    return new Response(JSON.stringify({ error: safeMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: clientError ? 400 : 500
+      status: clientError ? 400 : (message.includes('rate limit') ? 429 : 500)
     })
   }
-}) 
+})
+
+// Helper function to determine if error is client-side
+function isClientError(message: string): boolean {
+  const clientErrorPatterns = [
+    'location not found',
+    'invalid location',
+    'invalid date',
+    'invalid target species',
+    'invalid experience',
+    'invalid start time',
+    'invalid end time',
+    'invalid fishing styles',
+    'invalid platform',
+    'invalid number of days'
+  ]
+  
+  return clientErrorPatterns.some(pattern => 
+    message.toLowerCase().includes(pattern)
+  )
+}
+
+// Helper function to sanitize error messages
+function getSafeErrorMessage(message: string): string {
+  // Allow specific client error messages through
+  if (isClientError(message)) {
+    return message
+  }
+  
+  // Allow rate limit messages
+  if (message.includes('rate limit')) {
+    return message
+  }
+  
+  // Allow usage limit messages  
+  if (message.includes('free generation limit')) {
+    return message
+  }
+  
+  // Generic message for all other errors
+  return 'An error occurred while processing your request. Please try again later.'
+} 
