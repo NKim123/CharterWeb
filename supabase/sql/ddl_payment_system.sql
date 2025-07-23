@@ -50,6 +50,9 @@ alter table public.usage_tracking enable row level security;
 create policy "Users can view own usage" on public.usage_tracking
   for select using (auth.uid() = user_id);
 
+create policy "Users can insert own usage" on public.usage_tracking
+  for insert with check (auth.uid() = user_id);
+
 create policy "Service role can manage usage" on public.usage_tracking
   for all using (auth.role() = 'service_role');
 
