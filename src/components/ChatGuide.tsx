@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createParser, type EventSourceMessage } from 'eventsource-parser'
+import { sanitizeHtml, sanitizePromptInput, ClientRateLimit } from '../lib/security'
 
 interface ChatGuideProps {
   planId: string
@@ -10,10 +11,17 @@ interface Message {
   content: string
 }
 
+// Rate limiting: 10 messages per 5 minutes
+const chatRateLimit = new ClientRateLimit('chat', {
+  maxRequests: 10,
+  windowMs: 5 * 60 * 1000
+});
+
 export function ChatGuide({ planId }: ChatGuideProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   const scrollToBottom = () => {
@@ -26,7 +34,32 @@ export function ChatGuide({ planId }: ChatGuideProps) {
     e.preventDefault()
     if (!input.trim()) return
 
-    const newMessages: Message[] = [...messages, { role: 'user', content: input.trim() }]
+    // Clear any previous rate limit errors
+    setRateLimitError(null)
+
+    // Check rate limit
+    const rateCheck = chatRateLimit.checkLimit()
+    if (!rateCheck.allowed) {
+      const resetDate = new Date(rateCheck.resetTime)
+      setRateLimitError(`Rate limit exceeded. Try again after ${resetDate.toLocaleTimeString()}`)
+      return
+    }
+
+    // Sanitize user input to prevent prompt injection
+    const sanitizedInput = sanitizePromptInput(input.trim())
+    
+    // Additional validation
+    if (sanitizedInput.length < 1) {
+      alert('Please enter a valid message')
+      return
+    }
+
+    if (sanitizedInput.length > 1000) {
+      alert('Message too long. Please keep it under 1000 characters.')
+      return
+    }
+
+    const newMessages: Message[] = [...messages, { role: 'user', content: sanitizedInput }]
     setMessages(newMessages)
     setInput('')
     setIsLoading(true)
@@ -77,7 +110,10 @@ export function ChatGuide({ planId }: ChatGuideProps) {
             return
           }
 
-          assistantMessage += text
+          // Sanitize streaming response to prevent XSS
+          const sanitizedText = sanitizeHtml(text)
+          assistantMessage += sanitizedText
+          
           setMessages((prev) => {
             const updated = [...prev]
             if (updated[updated.length - 1]?.role === 'assistant') {
@@ -105,11 +141,21 @@ export function ChatGuide({ planId }: ChatGuideProps) {
         parser.feed(decoder.decode(value, { stream: true }))
       }
     } catch (err) {
-      console.error(err)
-      alert('Chat failed')
+      console.error('Chat error:', err)
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, I encountered an error. Please try again later.' 
+      }])
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Render message content safely
+  const renderMessageContent = (content: string) => {
+    // Content is already sanitized, but double-check for safety
+    const safeContent = sanitizeHtml(content)
+    return <div>{safeContent}</div>
   }
 
   return (
@@ -120,26 +166,35 @@ export function ChatGuide({ planId }: ChatGuideProps) {
             key={idx}
             className={`p-3 rounded-lg max-w-[80%] ${m.role === 'user' ? 'bg-accent text-white self-end' : 'bg-gray-100 text-gray-900'}`}
           >
-            {m.content}
+            {renderMessageContent(m.content)}
           </div>
         ))}
+        {rateLimitError && (
+          <div className="p-3 rounded-lg bg-red-100 text-red-700 text-sm">
+            {rateLimitError}
+          </div>
+        )}
       </div>
       <form onSubmit={sendMessage} className="mt-auto flex gap-2">
         <input
           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-accent focus:border-transparent"
-          placeholder="Ask about your trip..."
+          placeholder="Ask about your trip... (Max 1000 characters)"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading}
+          maxLength={1000}
         />
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || !input.trim()}
           className="bg-brand text-white px-4 py-2 rounded-lg disabled:opacity-50"
         >
-          Send
+          {isLoading ? 'Sending...' : 'Send'}
         </button>
       </form>
+      <div className="text-xs text-gray-500 mt-1">
+        Remaining messages: {chatRateLimit.checkLimit().remaining}/10 per 5 minutes
+      </div>
     </div>
   )
 } 
