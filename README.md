@@ -318,5 +318,3 @@ CharterWeb/
 - **Lighthouse Score**: Performance ≥90, Accessibility ≥95
 - **API Response Time**: ≤3 seconds for trip generation
 - **Mobile Performance**: ≥85 on slower devices
-
-**CharterAI** - Transforming fishing trip planning through intelligent AI and real-time data integration.
