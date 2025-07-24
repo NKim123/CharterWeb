@@ -2,452 +2,205 @@
 
 ## 🎣 Overview
 
-CharterAI is a modern web application that helps fishing enthusiasts plan personalized fishing trips using AI. Users can input their preferences (location, date, target species, experience level) and receive detailed trip itineraries with map visualizations and an AI-powered chat guide for questions.
+CharterAI is a comprehensive AI-powered web application that helps fishing enthusiasts plan personalized fishing trips. Users input their preferences and receive detailed, intelligent itineraries with real-time data integration, interactive maps, and AI-powered guidance. The platform combines advanced weather forecasting, tide data, water conditions, and AI expertise to create actionable trip plans.
+
+## 🚀 Key Features
+
+### 🎯 Intelligent Trip Planning
+- **Time-Based Scheduling**: Precise start/end time planning instead of generic duration presets
+- **Advanced Filtering**: 38+ fish species, multiple fishing styles (fly, spin, cast), platform selection (shore/boat)
+- **Multi-Day Support**: Plan trips spanning 2-14 days with comprehensive itineraries
+- **Experience-Tailored**: Beginner, intermediate, and expert-specific recommendations
+
+### 🗺️ Interactive Mapping
+- **Mapbox Integration**: Professional outdoor-style maps optimized for fishing
+- **Location Picker**: Click-to-select locations with reverse geocoding
+- **Points of Interest**: Strategic fishing spots with coordinates and techniques
+- **Pin Summarizer**: AI-powered location analysis for any map coordinate
+
+### 🌊 Real-Time Data Integration
+- **NOAA Weather**: Live weather forecasts and conditions
+- **USGS Water Data**: Current water levels and flow rates
+- **Tide Predictions**: High/low tide times and extremes
+- **Moon Phase**: Calculated lunar phases for optimal fishing times
+
+### 🤖 AI-Powered Intelligence
+- **Decision Trees**: Dynamic if/then guidance that adapts to changing conditions
+- **Gear Recommendations**: Tailored equipment lists with specific lure and tackle suggestions
+- **Smart Checklists**: Experience-appropriate preparation lists
+- **RAG Knowledge Base**: Fishing expertise retrieval and application
+
+### 💬 Interactive AI Guide
+- **Streaming Chat**: Real-time AI assistant for trip-related questions
+- **Context-Aware**: Understands your specific trip plan and conditions
+- **Persistent History**: Conversation continuity across sessions
+
+### 🔄 Advanced Trip Management
+- **Trip History**: Save and access all previous trip plans
+- **Rescheduling**: Intelligent trip rescheduling with preserved preferences
+- **Public Sharing**: Share trip plans with shareable links
+- **Offline Storage**: IndexedDB persistence for offline access
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** - Modern UI library with hooks and functional components
-- **TypeScript** - Type safety and better developer experience
-- **Vite** - Fast build tool and development server
-- **React Router Dom** - Client-side routing for navigation
-- **Tailwind CSS** - Utility-first CSS framework for styling
-- **React Hook Form + Zod** - Form handling and validation
-- **Mapbox GL** - Interactive maps for visualizing fishing locations
+- **React 18** with TypeScript for type-safe development
+- **Vite** for fast builds and hot module replacement
+- **Tailwind CSS** for responsive, modern styling
+- **React Router Dom** for client-side navigation
+- **React Hook Form + Zod** for robust form validation
+- **Mapbox GL JS** for professional mapping capabilities
+- **Sentry** for error monitoring and performance tracking
 
-### Backend & Infrastructure
-- **Supabase** - Backend-as-a-Service (Database, Auth, Edge Functions)
-- **Supabase Edge Functions** - Serverless functions running on Deno
-- **PostgreSQL** - Database (via Supabase)
-- **Vercel** - Frontend deployment and hosting
+### Backend & Infrastructure  
+- **Supabase** as Backend-as-a-Service (PostgreSQL, Auth, Edge Functions)
+- **Deno Runtime** for serverless Edge Functions
+- **OpenAI GPT-4o** for intelligent itinerary generation
+- **Stripe** for subscription and billing management
+- **Vercel** for frontend hosting and deployment
 
-### State Management & Storage
-- **React Context** - Authentication state management
-- **IndexedDB** (via idb-keyval) - Client-side trip data persistence
-- **Supabase Auth** - User authentication with magic links
+### Data & APIs
+- **NOAA Weather Service** for meteorological data
+- **USGS Water Services** for hydrological conditions  
+- **WorldTides API** for tide predictions
+- **Nominatim/OpenStreetMap** for geocoding and reverse geocoding
 
-### Development Tools
-- **Sentry** - Error monitoring and performance tracking
-- **PWA (Progressive Web App)** - Offline capabilities and app-like experience
-- **GitHub Actions** - CI/CD pipeline for automated deployment
+### State & Storage
+- **React Context** for authentication state
+- **IndexedDB** (via idb-keyval) for client-side persistence
+- **Supabase Auth** with magic link authentication
+- **Row Level Security (RLS)** for data protection
 
-## 📁 Project Structure
+## 📁 Project Architecture
 
 ```
-src/
-├── api/                    # Backend API integrations
-│   └── planTrip.ts        # Trip planning API calls
-├── components/            # Reusable UI components
-│   ├── ChatGuide.tsx     # AI chat interface
-│   ├── Header.tsx        # Navigation header
-│   ├── Login.tsx         # Authentication form
-│   ├── MapView.tsx       # Interactive map component
-│   └── TripPlanningForm.tsx # Main form for trip input
-├── contexts/             # React Context providers
-│   └── AuthContext.tsx   # Authentication state management
-├── lib/                  # Utility libraries
-│   ├── storage.ts        # IndexedDB operations
-│   └── supabaseClient.ts # Supabase configuration
-├── pages/                # Main application pages
-│   └── AdminPage.tsx     # Admin dashboard
-├── schemas/              # Data validation schemas
-│   └── trip.ts           # Zod schemas for trip data
-├── types/                # TypeScript type definitions
-│   └── trip.ts           # Trip-related interfaces
-├── App.tsx               # Main application component
-└── main.tsx              # Application entry point
-
-supabase/
-└── functions/            # Serverless backend functions
-    ├── _shared/          # Shared utilities
-    │   └── cors.ts       # CORS headers
-    └── plan_trip/        # Trip planning logic
-        └── index.ts      # Main planning function
+CharterWeb/
+├── src/
+│   ├── api/                    # API integrations
+│   │   ├── planTrip.ts        # Core trip planning
+│   │   ├── subscription.ts    # Billing & usage
+│   │   ├── trips.ts          # Trip management  
+│   │   └── profile.ts        # User profiles
+│   │
+│   ├── components/            # React components
+│   │   ├── TripPlanningForm.tsx    # Enhanced form with time fields
+│   │   ├── TripPlanningWizard.tsx  # Multi-step planning flow
+│   │   ├── LocationPicker.tsx      # Map-based location selection
+│   │   ├── ItineraryDetails.tsx    # Rich itinerary display
+│   │   ├── MapView.tsx            # Interactive Mapbox maps
+│   │   ├── ChatGuide.tsx          # Streaming AI chat
+│   │   ├── Header.tsx             # Navigation with auth
+│   │   ├── Login.tsx              # Magic link authentication
+│   │   ├── PricingModal.tsx       # Subscription management
+│   │   └── BackToTop.tsx          # UX enhancement
+│   │
+│   ├── pages/                 # Application pages
+│   │   ├── AdminPage.tsx      # Usage analytics & monitoring
+│   │   ├── TripHistory.tsx    # Trip management dashboard
+│   │   ├── SharedTrip.tsx     # Public trip sharing
+│   │   └── ProfilePage.tsx    # User profile management
+│   │
+│   ├── contexts/              # State management
+│   │   └── AuthContext.tsx    # Authentication state
+│   │
+│   ├── lib/                   # Utilities
+│   │   ├── supabaseClient.ts  # Database client
+│   │   ├── storage.ts         # IndexedDB operations
+│   │   ├── stripe.ts          # Payment processing
+│   │   └── security.ts        # Security utilities
+│   │
+│   ├── schemas/               # Data validation
+│   │   └── trip.ts           # Zod schemas & validation
+│   │
+│   └── types/                 # TypeScript definitions
+│       └── trip.ts           # Interface definitions
+│
+├── supabase/
+│   ├── functions/             # Edge Functions
+│   │   ├── plan_trip/         # Core trip generation
+│   │   ├── chat_guide/        # AI chat assistant  
+│   │   ├── reschedule/        # Trip rescheduling
+│   │   ├── summarize_pin/     # Location analysis
+│   │   ├── create-checkout-session/  # Stripe integration
+│   │   ├── create-customer-portal/   # Billing management
+│   │   └── stripe-webhook/           # Payment webhooks
+│   │
+│   └── sql/                   # Database schema & migrations
+│
+├── package.json               # Dependencies & scripts
+├── tailwind.config.ts         # Styling configuration
+├── vite.config.ts            # Build configuration
+└── vercel.json               # Deployment settings
 ```
 
-## 🔧 Component Documentation
+## 🔧 Core Components
 
-### 1. App.tsx - Main Application Entry Point
-**Purpose**: Orchestrates the entire application, handles routing, and manages global state.
+### TripPlanningForm
+**Enhanced Planning Interface**
+- Time-window planning (startTime/endTime) with validation
+- 38+ fish species selection with search functionality
+- Fishing style multi-select (fly, spin, cast)
+- Platform selection (shore, boat) with conditional logic
+- Multi-day trip support with day count validation
+- Map-based location picker integration
 
-**Key Features**:
-- **Routing**: Uses React Router to handle navigation between main app and admin page
-- **Authentication Gate**: Renders login form if user not authenticated
-- **Trip Planning Flow**: Manages the complete trip planning workflow
-- **State Management**: Handles loading states and trip plan data
-
-**Data Flow**:
-1. User submits trip form → `handleSubmit` function
-2. Calls `planTrip` API → Supabase Edge Function
-3. Receives trip plan → Updates local state
-4. Saves to IndexedDB → Displays map and chat interface
-
-### 2. TripPlanningForm.tsx - Trip Input Interface
-**Purpose**: Collects user preferences for trip planning with comprehensive form validation.
-
-**Key Features**:
-- **Form Validation**: Uses React Hook Form with Zod schema validation
-- **Species Selection**: Multi-select checkbox interface for target fish species
-- **Dynamic UI**: Real-time validation feedback and loading states
-- **Accessibility**: Proper labeling and keyboard navigation
-
-**Form Fields**:
-- Location (text input with validation)
-- Date (date picker with future date validation)
-- Target Species (multi-select with 1-5 species limit)
-- Duration (dropdown: half-day, full-day, multi-day)
-- Experience Level (dropdown: beginner, intermediate, expert)
-
-**Validation Rules**:
-- Location: Required, 1-100 characters
-- Date: Required, must be today or future
-- Species: 1-5 species required
-- All fields have proper error handling
-
-### 3. MapView.tsx - Interactive Map Visualization
-**Purpose**: Displays fishing locations and waypoints on an interactive Mapbox map.
-
-**Key Features**:
-- **Mapbox Integration**: Uses Mapbox GL for professional mapping
-- **Waypoint Markers**: Custom markers for launch, fishing, and landing points
-- **Popups**: Click markers to see location details and descriptions
-- **Auto-fitting**: Automatically adjusts view to show all waypoints
-- **Error Handling**: Graceful fallback for map loading issues
-
-**Technical Details**:
-- Initializes with outdoor style for fishing context
-- Adds navigation controls for zoom/pan
-- Uses cleanup pattern to prevent memory leaks
-- Supports StrictMode with proper re-initialization
-
-### 4. ChatGuide.tsx - AI-Powered Trip Assistant
-**Purpose**: Provides an interactive chat interface for users to ask questions about their trip.
-
-**Key Features**:
-- **Streaming Responses**: Real-time AI responses using Server-Sent Events
-- **Message History**: Maintains conversation context
-- **Auto-scroll**: Automatically scrolls to show new messages
-- **Loading States**: Visual feedback during AI processing
-
-**Technical Implementation**:
-- Uses EventSource parser for streaming data
-- Implements proper cleanup for stream connections
-- Handles connection errors gracefully
-- Updates UI incrementally as responses arrive
-
-### 5. AuthContext.tsx - Authentication Management
-**Purpose**: Manages user authentication state and provides auth methods throughout the app.
-
-**Key Features**:
-- **Magic Link Auth**: Passwordless authentication via email
-- **Session Management**: Persistent login state across browser sessions
-- **Auto-logout**: Handles session expiration
-- **Context Provider**: Makes auth state available globally
-
-**Authentication Flow**:
-1. User enters email → `signInWithEmail`
-2. Supabase sends magic link → User clicks link
-3. Session established → `onAuthStateChange` updates state
-4. App renders authenticated content
-
-### 6. AdminPage.tsx - Administrative Dashboard
-**Purpose**: Provides administrative oversight with token usage tracking and error monitoring.
-
-**Key Features**:
-- **Role-based Access**: Only accessible to users with admin role
-- **Token Tracking**: Monitors AI API usage and costs
-- **Error Logs**: Displays system errors and edge function issues
-- **Data Tables**: Organized display of administrative data
-
-**Current Implementation**:
-- Uses stub data (needs real Supabase queries)
-- Simple role checking via user metadata
-- Basic table layout for data presentation
-
-### 7. Storage Utilities (lib/storage.ts)
-**Purpose**: Manages client-side persistence of trip data using IndexedDB.
-
-**Key Features**:
-- **Trip Persistence**: Saves trip plans locally for offline access
-- **CRUD Operations**: Complete create, read, update, delete functionality
-- **Key Management**: Organized storage with consistent naming
-- **Async Operations**: Promise-based API for all storage operations
-
-**Storage Schema**:
+**Current Form Schema:**
 ```typescript
-StoredTrip {
-  id: string        // Unique trip identifier
-  data: unknown     // Complete trip plan data
+{
+  location: string;          // Manual or map-selected (≤200 chars)
+  date: string;             // YYYY-MM-DD format (today or future)
+  startTime: string;        // HH:MM format (default: 06:00)
+  endTime: string;          // HH:MM format (must be after startTime)
+  targetSpecies: string[];  // 1-5 species from expanded list
+  styles: string[];         // ≥1 from ['fly', 'spin', 'cast']
+  platform: string;        // 'shore' | 'boat'
+  experience: string;       // 'beginner' | 'intermediate' | 'expert'
+  numDays?: number;         // 2-14 days for multi-day trips
 }
 ```
+
+### ItineraryDetails
+**Comprehensive Trip Display**
+- **Summary**: 3-4 sentence trip overview generated by AI
+- **Points of Interest**: Strategic fishing locations with coordinates and techniques
+- **Decision Tree**: Conditional guidance based on real-time factors
+- **Weather & Water**: Integrated NOAA and USGS data
+- **Tide Information**: High/low times with extremes
+- **Moon Phase**: Current lunar phase for fishing optimization
+- **Gear Recommendations**: Tailored equipment lists with specifics
+- **Checklist**: Experience-appropriate preparation items
+- **Expert Tips**: AI-generated fishing insights
+
+### MapView  
+**Interactive Fishing Maps**
+- Mapbox outdoor-style optimized for fishing environments
+- Custom markers for points of interest with popups
+- Click-to-summarize functionality using AI analysis
+- Auto-fitting bounds to show all fishing locations
+- Navigation controls for zoom and pan
+
+### ChatGuide
+**AI-Powered Trip Assistant**
+- Streaming GPT-4o responses for real-time interaction
+- Context-aware of specific trip plans and conditions
+- Persistent conversation history across sessions
+- Auto-scrolling interface with loading states
+- Integration with trip-specific knowledge base
 
 ## 🌐 Backend Architecture
 
 ### Supabase Edge Functions
 
 #### plan_trip Function
-**Purpose**: Generates personalized fishing trip itineraries based on user input.
+**Core Trip Generation Engine**
+- **Input Validation**: Comprehensive validation and sanitization
+- **Rate Limiting**: 10 generations per hour per user
+- **Data Integration**: Parallel fetching of weather, water, and tide data
+- **AI Generation**: GPT-4o powered itinerary creation with structured output
+- **Database Persistence**: Trip storage with preferences for rescheduling
+- **Usage Tracking**: Token usage monitoring for billing
 
-**Current Status**: Fully integrated – calls OpenAI (jsr:@openai/openai), NOAA Weather, USGS Water Services, plus a small RAG knowledge base. Results are persisted to Supabase `trips` table via RLS-aware insert.
-**Location**: `supabase/functions/plan_trip/index.ts`
-
-**Input Schema**:
-```typescript
-{
-  location: string
-  date: string
-  targetSpecies: string[]
-  duration: 'half-day' | 'full-day' | 'multi-day'
-  experience: 'beginner' | 'intermediate' | 'expert'
-}
-```
-
-**Output Schema**:
-```typescript
-{
-  plan_id: string
-  itinerary: {
-    waypoints: Waypoint[]
-    weather: WeatherInfo
-    regulations: RegulationInfo
-    tips: string[]
-  }
-  generated_at: string
-}
-```
-
-**Recent Enhancements**:
- - ✅ NOAA weather forecast integration
- - ✅ USGS water-condition integration
- - ✅ OpenAI itinerary generation (GPT-4o)
- - ✅ RAG fishing knowledge snippets
- - ✅ Supabase persistence & RLS policies
-
-#### chat_guide Function
-**Purpose**: Provides AI-powered assistance for trip-related questions.
-
-**Current Status**: Referenced in frontend but implementation not visible
-**Expected Features**:
-- Streaming responses for real-time interaction
-- Context awareness of user's trip plan
-- Knowledge base about fishing techniques and locations
-
-## 🎨 Styling and UI
-
-### Tailwind CSS Configuration
-**Custom Theme**:
-- **Brand Colors**: Dark navy (#0a1121) for professional appearance
-- **Accent Colors**: Teal (#14B8A6) for interactive elements
-- **Typography**: Inter font for modern readability
-- **Responsive Design**: Mobile-first approach with breakpoints
-
-**Component Patterns**:
-- Consistent spacing using Tailwind's scale
-- Form styling with focus states and validation feedback
-- Loading states with spinners and disabled states
-- Card-based layout for content organization
-
-### PWA Configuration
-**Features**:
-- **Offline Support**: Service worker caching for maps and trip data
-- **App-like Experience**: Standalone display mode
-- **Performance Optimization**: Caching strategies for external APIs
-- **Background Sync**: Planned for offline trip planning
-
-## 📊 Current Project Status
-
-### ✅ Completed Features
-
-#### Core Functionality
-- [x] **User Authentication**: Magic link login with Supabase Auth
-- [x] **Trip Planning Form**: Complete form with validation using React Hook Form + Zod
-- [x] **Map Visualization**: Interactive Mapbox integration with waypoint markers
-- [x] **AI-Powered Trip Generation**: Edge Function returns real itineraries using external data & LLM
-- [x] **Client-side Storage**: IndexedDB integration for offline trip access
-- [x] **Responsive Design**: Mobile-friendly UI with Tailwind CSS
-
-#### Development Infrastructure
-- [x] **TypeScript Setup**: Full type safety across frontend and backend
-- [x] **Build System**: Vite configuration with fast development and production builds
-- [x] **PWA Support**: Service worker and manifest for app-like experience
-- [x] **Error Monitoring**: Sentry integration for production error tracking
-- [x] **CI/CD Pipeline**: GitHub Actions for automated deployment
-
-#### UI Components
-- [x] **TripPlanningForm**: Complete with species selection and validation
-- [x] **MapView**: Professional map interface with custom markers
-- [x] **ChatGuide**: Frontend interface for AI chat (streaming support)
-- [x] **Header/Navigation**: Role-based navigation with admin access
-- [x] **Login**: Smooth authentication experience
-
-### 🚧 Development Backlog (pre-launch)
-
-Below is the implementation-aware backlog leading to an initial-release (v1.0).  Items marked ✅ already exist in the codebase and only need verification / polish, whereas items without a mark are new work.
-
-1. Functional Gaps (blocking)
-   - ✅ NOAA weather + water conditions (present)
-   - Tide & Moon-phase integration → display in itinerary
-   - Gear / equipment recommendations (+ checklist UI)
-   - Advanced species list (≥50) & fishing styles (fly/spin/cast), shore/boat toggle
-   - Multi-day trip support (numDays input & UI)
-   - Trip rescheduling endpoint + button in history
-   - Map “drop a pin” summariser (Edge Function + Mapbox click)
-
-2. Data, Security & Backend
-   - RLS hardening for all tables (chat_messages, token_usage…)
-   - Request rate-limiting in Edge Functions
-   - pgvector knowledge-base & similarity search
-   - Database migration scripts & CI automation
-   - Secrets management in Vercel / GitHub Actions
-   - (Optional) Stripe metered billing
-
-3. Quality & Reliability
-   - Jest / RTL unit tests for UI components
-   - Vitest integration tests for plan_trip & chat_guide
-   - Playwright E2E for login → plan trip → share flow
-   - Performance budget ≤ 250 kB gzip; lazy-load heavy libs
-   - Edge-function Sentry instrumentation
-   - Accessibility (WCAG 2.1 AA) pass
-
-4. PWA / Offline
-   - Cache itinerary + tiles
-   - Background sync queue for offline trip generation
-   - Manifest & icon polish
-
-5. UI / UX Polish
-   - Responsive tweaks <375 px, iOS keyboard
-   - Empty/error illustrations
-   - Admin dashboard pagination & realtime logs
-   - Avatar upload via Supabase Storage
-
-6. Dev-Experience & Docs
-   - Contribution guide & pre-commit hooks
-   - Architecture diagram in docs/
-
-7. Nice-to-have Post-launch
-   - Community reports / leaderboards
-   - Mobile shell with Expo
-
----
-
-## ✅ Newly Implemented Features (June 2025)
-1. Tide & Moon data added to itinerary (WorldTides + algorithmic moon phase)  
-2. Gear & checklist generation via GPT prompt + UI section  
-3. Expanded species list (50+) and new form inputs for fishing style & platform  
-4. Multi-day support (numDays field)  
-5. Reschedule Edge Function + TripHistory button  
-6. Map pin summariser (summarize_pin) with Mapbox click popup
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- Supabase account
-- Mapbox account
-- OpenAI API key (for production)
-
-### Environment Variables
-```bash
-# Frontend (.env)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_MAPBOX_TOKEN=your_mapbox_token
-VITE_FUNCTIONS_URL=your_supabase_functions_url
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-# Backend (Supabase Dashboard)
-OPENAI_API_KEY=your_openai_api_key
-```
-
-### Installation
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Deploy Supabase functions
-supabase functions deploy plan_trip
-```
-
-This documentation provides a complete understanding of the CharterAI application architecture, current implementation status, and roadmap for future development. The codebase is well-structured with a modern tech stack, making it ready for both immediate use and future enhancements.
-
-## 🧪 Testing Methodology
-
-The repo now contains new functional surfaces (tide/moon integration, gear, rescheduling, pin summariser).  Use the following layered approach to test:
-
-1. Unit tests (Vitest/Jest)
-   - `plan_trip` helpers: `geocodeLocation`, `fetchTideSummary`, `getMoonPhase` (mock fetch).
-   - React components: `TripPlanningForm` (validation of new fields), `ItineraryDetails` renders new sections.
-
-2. Integration tests (Vitest)
-   - Call `plan_trip` Edge Function locally with `supabase functions serve` and assert JSON schema includes `tides`, `moonPhase`, `gear`, `checklist`.
-   - Invoke `reschedule` for an existing trip and verify new plan returned.
-
-3. E2E tests (Playwright)
-   - Login → create trip with multi-day & styles selected → confirm itinerary shows tide/moon & gear.
-   - Navigate to Trip History → click “Reschedule” → verify alert + new row.
-   - On Shared Trip page drop a pin on the map → expect popup with summary text.
-
-4. Performance & Accessibility
-   - Run Lighthouse CI in mobile & desktop modes; ensure performance ≥90, a11y ≥95.
-   - Bundle analysis via `vite build --report` stays ≤250 kB gzip.
-
-CI Configuration suggestion:  
-- `npm run test` → Jest/Vitest  
-- `npm run test:e2e` (Playwright) in GitHub Actions with Supabase local emulator.
-
-remove summarize feature in itineraries
-minimap in trip generation
-page/step based information gathering, tailor species selection
-
-## 🆕 Recent Updates (July 2025)
-
-CharterAI has undergone several improvements based on early user feedback:
-
-1. **Time-Window Planning** – Trip form now captures exact `startTime` and `endTime` (HH:MM) instead of generic duration presets. Validation ensures the end time is after the start time.
-2. **Map-Based Location Picker** – Users can click “Pick on Map” to drop a pin and reverse-geocode the location.
-3. **Itinerary Format Overhaul**
-   - `pointsOfInterest` replaces raw waypoints (cleaner list shown on map).
-   - `decisionTree` offers actionable *if/then* guidance as conditions change.
-   - Concise `summary` (3-4 sentences) now appears at the top of the itinerary.
-4. **Admin Dashboard Fixes** – Usage monitoring and error logs now populate correctly after RLS policy patches.
-5. **Reschedule Endpoint** – Edge function re-uses stored `preferences` and accepts an optional new date.
-6. **Chat UI Enhancements** – Streaming no longer blanks out; chat panel is sticky on large screens and scrolls smoothly within its own container.
-7. **Validation Tweaks** – Location max length increased to 200 chars; today’s date is correctly allowed in all time zones.
-
----
-
-### Updated TripPlanningForm
-| Field | Type | Notes |
-|-------|------|-------|
-| `location` | string | Manual text or auto-filled via map picker (≤200 chars) |
-| `date` | YYYY-MM-DD | Today or future |
-| `startTime` | HH:MM | Required; defaults 06:00 |
-| `endTime` | HH:MM | Required; must be after `startTime` |
-| `targetSpecies` | string[] | 1-5 species from 50+ list |
-| `styles` | `'fly' | 'spin' | 'cast'`[] | ≥1 |
-| `platform` | `'shore' | 'boat'` | |
-| `experience` | `'beginner' | 'intermediate' | 'expert'` | |
-| `numDays` | number | Only when planning a multi-day trip |
-
-### plan_trip Input Schema (v2)
-```typescript
-{
-  location: string;
-  date: string;
-  startTime: string; // HH:MM
-  endTime: string;   // HH:MM
-  targetSpecies: string[];
-  styles: ('fly' | 'spin' | 'cast')[];
-  platform: 'shore' | 'boat';
-  experience: 'beginner' | 'intermediate' | 'expert';
-  numDays?: number;
-}
-```
-
-### plan_trip Output Schema (v2)
+**Enhanced Output Schema:**
 ```typescript
 {
   plan_id: string;
@@ -460,9 +213,12 @@ CharterAI has undergone several improvements based on early user feedback:
       description: string;
       techniques: string[];
     }>;
-    decisionTree: Array<{ condition: string; action: string }>;
-    weather: any;
-    water: any;
+    decisionTree: Array<{
+      condition: string;
+      action: string;
+    }>;
+    weather: WeatherInfo;
+    water: WaterInfo;
     tides: { nextHigh: string; nextLow: string };
     moonPhase: string;
     gear: string[];
@@ -473,12 +229,94 @@ CharterAI has undergone several improvements based on early user feedback:
 }
 ```
 
-### New SQL Patches
-* `supabase/sql/patch_update_admin_policies.sql` – Alters existing RLS policies for admin reads.
-* `supabase/sql/patch_add_trip_preferences.sql` – Adds `preferences` column to `trips` for rescheduling.
+#### chat_guide Function
+**AI Chat Assistant**
+- Streaming response capability using Server-Sent Events
+- Trip context awareness with message persistence
+- Content filtering and safety measures
+- Conversation history management
 
-Run these scripts in the Supabase SQL editor **before deploying** updated edge functions.
+#### reschedule Function
+**Intelligent Trip Rescheduling**
+- Retrieves original trip preferences from database
+- Accepts new date parameter or defaults to current date
+- Invokes plan_trip with updated parameters
+- Maintains trip history and generates new plan ID
 
----
+#### summarize_pin Function
+**Location Intelligence**
+- Accepts latitude/longitude coordinates
+- Generates AI-powered fishing condition summaries
+- Provides species and technique recommendations
+- Includes safety considerations for offshore locations
 
-> **Tip for contributors:** Remember to run `npm run lint` and `npm run test` before opening a PR. Continuous deployment via GitHub Actions will build the frontend and redeploy Edge Functions on merge to `main`.
+#### Stripe Integration Functions
+- **create-checkout-session**: Subscription plan purchases
+- **create-customer-portal**: Billing management interface
+- **stripe-webhook**: Payment event processing
+
+## 💳 Subscription System
+
+### Pricing Tiers
+- **Free Tier**: Limited trip generations with basic features
+- **Pro Tier**: Unlimited generations with premium features
+- **Usage Tracking**: Token consumption monitoring
+- **Billing Management**: Self-service portal via Stripe
+
+### Admin Dashboard
+- **Usage Analytics**: Token consumption by date and user
+- **Error Monitoring**: Edge function error logs with stack traces
+- **User Management**: Admin-only user list with roles and metadata
+- **Performance Metrics**: System health and usage patterns
+
+## 🗄️ Database Schema
+
+### Core Tables
+- **trips**: Trip plans with itineraries and preferences
+- **chat_messages**: Conversation history for AI guide
+- **token_usage**: API consumption tracking for billing
+- **error_logs**: System error monitoring
+- **admin_user_list**: User management view (admin-only)
+
+### Security
+- **Row Level Security (RLS)**: Fine-grained access control
+- **JWT Authentication**: Secure session management
+- **Role-based Access**: Admin, user, and public permissions
+- **Data Encryption**: All sensitive data encrypted at rest
+
+## 📊 Current Status
+
+### ✅ Production-Ready Features
+- [x] **Complete Trip Planning Flow** - Form, validation, generation, display
+- [x] **Real-Time Data Integration** - Weather, water, tides, moon phases
+- [x] **Interactive Mapping** - Mapbox integration with location picker
+- [x] **AI Chat Assistant** - Streaming responses with trip context
+- [x] **Trip Management** - History, sharing, rescheduling
+- [x] **Subscription System** - Stripe integration with usage tracking
+- [x] **Admin Dashboard** - Analytics, monitoring, user management
+- [x] **Mobile Responsive** - Optimized for all device sizes
+- [x] **Security** - RLS, authentication, input validation
+- [x] **Performance** - Optimized builds, caching, error handling
+
+### 🔄 Active Development
+- [ ] **Enhanced Testing Suite** - Unit, integration, and E2E tests
+- [ ] **Advanced PWA Features** - Offline capabilities, background sync
+- [ ] **Performance Optimization** - Bundle size reduction, lazy loading
+- [ ] **Accessibility Improvements** - WCAG 2.1 AA compliance
+- [ ] **Enhanced Analytics** - User behavior tracking, conversion metrics
+
+### 🎯 Future Roadmap
+- [ ] **Mobile Application** - React Native or Expo implementation
+- [ ] **Social Features** - Community sharing, trip reports, leaderboards
+- [ ] **Advanced AI Features** - Image recognition, voice commands
+- [ ] **Integration Expansion** - Additional weather sources, fishing apps
+- [ ] **Localization** - Multi-language support
+- [ ] **Enterprise Features** - Team management, bulk operations
+
+## 📈 Performance Targets
+- **Bundle Size**: ≤250 kB gzipped
+- **Lighthouse Score**: Performance ≥90, Accessibility ≥95
+- **API Response Time**: ≤3 seconds for trip generation
+- **Mobile Performance**: ≥85 on slower devices
+
+**CharterAI** - Transforming fishing trip planning through intelligent AI and real-time data integration.
