@@ -24,7 +24,9 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [plan, setPlan] = useState<any | null>(null)
   const [pendingTrip, setPendingTrip] = useState<TripFormData | null>(null)
-  const [showLogin, setShowLogin] = useState(false)
+  // Show sign-in modal by default when the user is not authenticated
+  const { session } = useAuth()
+  const [showLogin, setShowLogin] = useState(() => !session)
   const [showPricing, setShowPricing] = useState(false)
   const [usage, setUsage] = useState<any>(null)
 
@@ -38,7 +40,12 @@ function AppContent() {
     }
   }, [])
 
-  const { session } = useAuth()
+  // Hide the modal automatically after the user signs in
+  React.useEffect(() => {
+    if (session) {
+      setShowLogin(false)
+    }
+  }, [session])
 
   // Load usage data when user is authenticated
   React.useEffect(() => {
