@@ -84,7 +84,6 @@ function AppContent() {
       localStorage.setItem('current_plan_id', res.plan_id)
       // Refresh usage data after successful generation
       getUserUsage().then(setUsage).catch(console.error)
-      alert('Trip plan generated! Check console for details.')
     } catch (err: any) {
       console.error(err)
       // Check if it's a usage limit error
@@ -139,15 +138,7 @@ function AppContent() {
   const loginModal = showLogin && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="relative">
-        <button
-          className="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow"
-          onClick={() => setShowLogin(false)}
-          aria-label="Close sign-in"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
+        {/* The close button has been removed to enforce sign-in before proceeding */}
         <Login />
       </div>
     </div>
@@ -181,7 +172,7 @@ function AppContent() {
               {/* Map */}
               <div>
                 <h2 className="text-2xl font-bold mb-4">Map Preview</h2>
-                <MapView waypoints={(plan.itinerary.pointsOfInterest ?? plan.itinerary.waypoints) || []} />
+                <MapView waypoints={(plan.itinerary.pointsOfInterest ?? plan.itinerary.waypoints) || []} enableSummary />
               </div>
 
               {/* Itinerary Details */}

@@ -43,7 +43,7 @@ export default function SharedTrip() {
             {/* Map */}
             <div>
                { (trip.itinerary.pointsOfInterest || trip.itinerary.waypoints) && (
-                 <MapView waypoints={(trip.itinerary.pointsOfInterest ?? trip.itinerary.waypoints) || []} height="400px" />
+                 <MapView waypoints={(trip.itinerary.pointsOfInterest ?? trip.itinerary.waypoints) || []} height="400px" enableSummary />
                )}
             </div>
 

@@ -144,6 +144,7 @@ export default function TripPlanningWizard({ onSubmit, isLoading = false }: Prop
                 {step === 0 && (
                     <section>
                         <h2 className="text-3xl font-bold text-brand mb-4 text-center">Where do you want to fish?</h2>
+                        <p className="text-gray-600 text-sm mb-4 max-w-lg mx-auto">Tap anywhere on the map to drop a red pin and select your fishing spot. For now, CharterAI supports locations within the United States. Hold Cmd/Ctrl and click to see a quick AI-generated fishing summary for that point.</p>
                         <div
                             ref={mapDiv}
                             style={{ width: '100%', height: '24rem' }}

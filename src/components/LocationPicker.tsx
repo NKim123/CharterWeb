@@ -12,9 +12,10 @@ interface LocationPickerProps {
 
 export function LocationPicker({ onSelect, onClose }: LocationPickerProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<mapboxgl.Map | null>(null)
+  // Using 'any' to avoid TypeScript errors due to missing mapbox-gl types
+  const mapRef = useRef<any>(null)
 
-  const [marker, setMarker] = useState<mapboxgl.Marker | null>(null)
+  const [marker, setMarker] = useState<any>(null)
   const [displayName, setDisplayName] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -29,7 +30,7 @@ export function LocationPicker({ onSelect, onClose }: LocationPickerProps) {
     })
     mapRef.current.addControl(new mapboxgl.NavigationControl())
 
-    mapRef.current.on('click', async (e: mapboxgl.MapMouseEvent) => {
+    mapRef.current.on('click', async (e: any) => {
       const { lng, lat } = e.lngLat
       if (marker) marker.remove()
       const newMarker = new mapboxgl.Marker({ color: '#f43f5e' }).setLngLat([lng, lat]).addTo(mapRef.current!)
@@ -57,6 +58,9 @@ export function LocationPicker({ onSelect, onClose }: LocationPickerProps) {
         <div className="flex justify-between items-center px-4 py-2 border-b">
           <h2 className="text-lg font-semibold">Select Fishing Location</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+        </div>
+        <div className="flex justify-between items-center px-4 py-2 border-b">
+          <p className="text-sm text-gray-600 mt-1">Tap the map to drop a pin. Currently only U.S. locations are supported.</p>
         </div>
         <div ref={mapContainer} className="flex-1" />
         <div className="p-4 border-t space-y-2">
