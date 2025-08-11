@@ -50,21 +50,40 @@ export default function TripPlanningWizard({ onSubmit, isLoading = false }: Prop
                 const { lng, lat } = e.lngLat;
                 /* cmd/ctrl click → ask for summary */
                 if ((e.originalEvent as MouseEvent).metaKey || (e.originalEvent as MouseEvent).ctrlKey) {
-                    if (!window.confirm('Summarize fishing at this spot?')) return;
                     try {
-                        const res = await fetch(`${import.meta.env.VITE_FUNCTIONS_URL}/summarize_pin`, {
+                        const functionsUrl = (import.meta.env.VITE_FUNCTIONS_URL as string) || `${import.meta.env.VITE_SUPABASE_URL as string}/functions/v1`;
+
+                        const headers: Record<string, string> = {
+                            'Content-Type': 'application/json',
+                            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
+                        };
+
+                        try {
+                            const { supabase } = await import('../lib/supabaseClient');
+                            const { data } = await supabase.auth.getSession();
+                            const token = data.session?.access_token;
+                            if (token) headers.Authorization = `Bearer ${token}`;
+                        } catch (_err) {
+                            /* continue without JWT */
+                        }
+
+                        const res = await fetch(`${functionsUrl}/summarize_pin`, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
-                            },
+                            headers,
                             body: JSON.stringify({ lon: lng, lat })
                         });
-                        const { summary } = await res.json();
-                        if (summary) {
-                            new mapboxgl.Popup().setLngLat([lng, lat]).setHTML(`<p>${summary}</p>`).addTo(mapRef.current!);
+
+                        if (!res.ok) {
+                            const text = await res.text().catch(() => '');
+                            throw new Error(text || `Request failed with ${res.status}`);
                         }
-                    } catch (err) { console.error(err); }
+                        const json = await res.json().catch(() => ({} as any));
+                        const content = (json as any)?.summary || 'No summary available for this spot.';
+                        new mapboxgl.Popup().setLngLat([lng, lat]).setHTML(`<p>${content}</p>`).addTo(mapRef.current!);
+                    } catch (err) { 
+                        console.error('Summarize click error:', err);
+                        new mapboxgl.Popup().setLngLat([lng, lat]).setHTML(`<p class=\"text-sm\">Couldn\'t load summary.</p>`).addTo(mapRef.current!);
+                    }
                     return;
                 }
                 /* normal click → choose location */
@@ -144,12 +163,16 @@ export default function TripPlanningWizard({ onSubmit, isLoading = false }: Prop
                 {step === 0 && (
                     <section>
                         <h2 className="text-3xl font-bold text-brand mb-4 text-center">Where do you want to fish?</h2>
-                        <p className="text-gray-600 text-sm mb-4 max-w-lg mx-auto">Tap anywhere on the map to drop a red pin and select your fishing spot. For now, CharterAI supports locations within the United States. Hold Cmd/Ctrl and click to see a quick AI-generated fishing summary for that point.</p>
-                        <div
-                            ref={mapDiv}
-                            style={{ width: '100%', height: '24rem' }}
-                            className="rounded-lg overflow-hidden shadow mb-4"
-                        />
+                        {/* Map container with overlay instructions */}
+                        <div className="relative mb-4" style={{ width: '100%', height: '24rem' }}>
+                            <div className="absolute top-2 left-2 bg-white bg-opacity-90 text-xs md:text-sm text-gray-800 rounded px-2 py-1 shadow">
+                                Tap the map to drop a red pin (U.S. only). Hold ⌘/Ctrl&nbsp;+ click for an AI fishing summary.
+                            </div>
+                            <div
+                                ref={mapDiv}
+                                className="w-full h-full rounded-lg overflow-hidden shadow"
+                            />
+                        </div>
                         {locationLabel && <p className="text-sm mb-2">Selected: {locationLabel}</p>}
                         {errors.location && <p className="text-sm text-red-600">{errors.location.message}</p>}
                     </section>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import mapboxgl, { LngLatLike } from 'mapbox-gl'
+import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN as string
@@ -20,13 +20,13 @@ interface MapViewProps {
 
 export function MapView({ waypoints, height = '500px', enableSummary = false }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<mapboxgl.Map | null>(null)
+  const mapRef = useRef<any>(null)
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
-    const initialCenter: LngLatLike = waypoints.length
-      ? waypoints[0].coordinates as [number, number]
+    const initialCenter: [number, number] = waypoints.length
+      ? (waypoints[0].coordinates as [number, number])
       : [-98.5795, 39.8283] // USA center fallback
 
     mapRef.current = new mapboxgl.Map({
@@ -47,7 +47,7 @@ export function MapView({ waypoints, height = '500px', enableSummary = false }: 
           new mapboxgl.Popup({ offset: 24 }).setHTML(
             `<h3 class="font-semibold">${wp.name}</h3><p class="text-sm">${wp.description}</p>`
           )
-        ).addTo(mapRef.current as mapboxgl.Map)
+        ).addTo(mapRef.current as any)
       })
 
       // Fit bounds if multiple waypoints
@@ -57,7 +57,7 @@ export function MapView({ waypoints, height = '500px', enableSummary = false }: 
       }
     })
 
-    mapRef.current.on('error', (e) => {
+    mapRef.current.on('error', (e: any) => {
       console.error('Mapbox error', e.error);
     })
 
@@ -66,21 +66,45 @@ export function MapView({ waypoints, height = '500px', enableSummary = false }: 
       mapRef.current.on('click', async (e: any) => {
         const { lngLat } = e
         if (!(e.originalEvent.metaKey || e.originalEvent.ctrlKey)) return
+
+        const functionsUrl = (import.meta.env.VITE_FUNCTIONS_URL as string) || `${import.meta.env.VITE_SUPABASE_URL as string}/functions/v1`
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
+        }
+
+        // Try to include user JWT if available (helps with RLS-enabled functions; safe to omit)
         try {
-          const res = await fetch(`${import.meta.env.VITE_FUNCTIONS_URL}/summarize_pin`, {
+          const { supabase } = await import('../lib/supabaseClient')
+          const { data } = await supabase.auth.getSession()
+          const token = data.session?.access_token
+          if (token) headers.Authorization = `Bearer ${token}`
+        } catch (_err) {
+          // continue without auth header
+        }
+
+        try {
+          const res = await fetch(`${functionsUrl}/summarize_pin`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string
-            },
+            headers,
             body: JSON.stringify({ lon: lngLat.lng, lat: lngLat.lat })
           })
-          const json = await res.json()
-          if (json.summary) {
-            new mapboxgl.Popup().setLngLat(lngLat).setHTML(`<p>${json.summary}</p>`).addTo(mapRef.current as mapboxgl.Map)
+
+          if (!res.ok) {
+            const text = await res.text().catch(() => '')
+            throw new Error(text || `Request failed with ${res.status}`)
           }
+
+          const json = await res.json().catch(() => ({}))
+          const content = json?.summary || 'No summary available for this spot.'
+          new mapboxgl.Popup().setLngLat(lngLat).setHTML(`<p>${content}</p>`).addTo(mapRef.current as any)
         } catch (err) {
-          console.error(err)
+          console.error('Summarize click error:', err)
+          new mapboxgl.Popup()
+            .setLngLat(lngLat)
+            .setHTML(`<p class=\"text-sm\">Couldn\\'t load summary.</p>`) 
+            .addTo(mapRef.current as any)
         }
       })
     }
