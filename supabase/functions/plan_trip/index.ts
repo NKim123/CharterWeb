@@ -482,7 +482,7 @@ interface Itinerary {
     condition: string; // e.g. "If {condition/observation}"
     action: string;    // e.g. "switch to {technique}", "try {technique}"
   }>;
-  weather: any;
+  weather: any; // Be sure to include the temperature high and low, as well as precipitation, cloud cover, and wind
   water: any;
   tides: { nextHigh: string; nextLow: string };
   moonPhase: string;
@@ -493,7 +493,7 @@ interface Itinerary {
 }
 
 Important:
-- Think in terms of "if/then" guidance a guide would give as conditions change throughout the day.
+- Think in terms of "if/then" guidance that a guide would give as conditions change throughout the day.
 - Provide at least 4–6 decisionTree steps ordered logically.
 - Choose 2-4 key pointsOfInterest relevant to the target species.
 - Do not repeat information from the decisionTree in the tips.
