@@ -35,22 +35,22 @@ export function Header({ onSignInClick, onUpgradeClick }: HeaderProps) {
     `${linkClass({ isActive })} block w-full text-left`
 
   return (
-    <header className="fixed top-0 inset-x-0 bg-white shadow z-20">
-      <div className="max-w-6xl mx-auto flex items-center justify-between h-16 px-4">
+    <header className="fixed top-0 inset-x-0 bg-white/95 backdrop-blur-sm shadow-soft z-20 border-b border-gray-100">
+      <div className="max-w-6xl mx-auto flex items-center justify-between h-18 px-6">
         <NavLink to="/" className="flex items-center" aria-label="Home">
-          <img src={logo} alt="CharterAI" className="h-10 md:h-12 w-auto" />
+          <img src={logo} alt="CharterAI" className="h-11 md:h-13 w-auto transition-transform duration-200 hover:scale-105" />
         </NavLink>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-2">
           {/* Usage indicator for free users */}
           {session && usage && !usage.is_subscribed && (
-            <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+            <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-4 py-2 rounded-full border border-gray-200">
               <span>{usage.trip_generations}/{STRIPE_CONFIG.FREE_GENERATIONS_LIMIT} trips used</span>
               {!usage.can_generate && (
                 <button 
                   onClick={onUpgradeClick}
-                  className="text-brand hover:underline ml-1"
+                  className="text-accent-600 hover:text-accent-700 font-medium hover:underline ml-1 transition-colors duration-150"
                 >
                   Upgrade
                 </button>
@@ -62,14 +62,14 @@ export function Header({ onSignInClick, onUpgradeClick }: HeaderProps) {
           {session && (
             <>
               <NavLink to="/history" className={linkClass}>
-                My Trips
+                📊 My Trips
               </NavLink>
               <NavLink to="/profile" className={linkClass}>
-                Profile
+                👤 Profile
               </NavLink>
               {role === 'admin' && (
                 <NavLink to="/admin" className={linkClass}>
-                  Admin
+                  ⚙️ Admin
                 </NavLink>
               )}
             </>
@@ -77,13 +77,13 @@ export function Header({ onSignInClick, onUpgradeClick }: HeaderProps) {
 
           {/* Auth action */}
           {session ? (
-            <button onClick={() => signOut()} className="ml-2 text-sm text-gray-600 hover:text-brand">
+            <button onClick={() => signOut()} className="ml-4 text-sm text-gray-600 hover:text-brand-700 font-medium transition-colors duration-150">
               Sign Out
             </button>
           ) : (
             <button
               onClick={onSignInClick}
-              className="ml-2 text-sm text-gray-600 hover:text-brand"
+              className="ml-4 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 rounded-lg transition-all duration-200 transform hover:scale-105"
             >
               Sign In
             </button>
@@ -104,7 +104,7 @@ export function Header({ onSignInClick, onUpgradeClick }: HeaderProps) {
 
       {/* Mobile menu panel */}
       {open && (
-        <nav className="md:hidden bg-white border-t shadow-inner">
+        <nav className="md:hidden bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-inner animate-slide-up">
           {session && (
             <>
               <NavLink to="/history" className={mobileLinkClass} onClick={() => setOpen(false)}>

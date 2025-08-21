@@ -32,8 +32,13 @@ pnpm-debug.log*
 node_modules/.cache 
 node_modules
 
+# Notes on implementation
 IMPLEMENTATION_SUMMARY.md
 PAYMENT_SYSTEM_SETUP.md
 SECURITY.md
+
+# Claude
+CLAUDE.md
+
 # SQL scripts
 supabase/sql/*.sql
